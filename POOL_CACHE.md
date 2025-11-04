@@ -68,5 +68,3 @@ curl "http://localhost:3000/api/cl-positions?owner=0x...&debug=1" | jq .debug
 # - gauge.stakedValues: 사용자 스테이킹 NFT 수
 ```
 
-
-

@@ -32,5 +32,3 @@ jobs:
           git add public/pool-cache.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update pool cache [skip ci]" && git push)
 
-
-

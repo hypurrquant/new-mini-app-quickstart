@@ -454,7 +454,6 @@ export async function GET(request: Request) {
       liquidityRaw?: string;
       isActive?: boolean;
       isStaked?: boolean;
-      isInRange?: boolean;
       pool: Address | null;
       slot0?: { sqrtPriceX96: string; tick: number };
       poolLiquidity?: string;
@@ -636,10 +635,6 @@ export async function GET(request: Request) {
       const d0 = (p as any).token0Decimals ?? tokenInfo.get((p.token0 as string).toLowerCase())?.decimals ?? 18;
       const d1 = (p as any).token1Decimals ?? tokenInfo.get((p.token1 as string).toLowerCase())?.decimals ?? 18;
       const liquidity = BigInt(p.liquidity || "0");
-
-      if (typeof tick === "number") {
-        p.isInRange = tick >= p.tickLower && tick < p.tickUpper;
-      }
 
       if (typeof tick === "number" && liquidity > 0n) {
         const ratio = Math.pow(1.0001, tick); // price of token1 in token0, ignoring decimals
@@ -965,9 +960,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ positions, debug: debugFlag ? debug : undefined });
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    console.error("cl-positions error:", e);
-    debug.steps.push({ step: "error", error: message });
     return NextResponse.json({ error: "Failed", debug }, { status: 500 });
   }
 }
+
+

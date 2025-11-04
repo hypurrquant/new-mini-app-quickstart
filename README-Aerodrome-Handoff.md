@@ -183,5 +183,3 @@ NEXT_PUBLIC_BASE_RPC_URL=https://mainnet.base.org
 - Onboard Any User: `https://docs.base.org/cookbook/onboard-any-user`
 
 
-
-

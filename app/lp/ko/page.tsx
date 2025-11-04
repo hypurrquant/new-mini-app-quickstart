@@ -58,7 +58,6 @@ export default function LpCheckerPage() {
       liquidityRaw?: string;
       isActive?: boolean;
       isStaked?: boolean;
-      isInRange?: boolean;
       pool: Address | null;
       slot0?: { sqrtPriceX96: string; tick: number };
       poolLiquidity?: string;
@@ -267,9 +266,7 @@ export default function LpCheckerPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             {/* Total Deposits */}
             {(() => {
-              const activePositions = clPositions.filter(
-                (p: any) => p.isActive && p.isInRange !== false
-              );
+              const activePositions = clPositions.filter((p: any) => p.isActive);
               const totalDeposited = activePositions.reduce((sum, p: any) => {
                 if (p.estimatedValueUSD) {
                   return sum + parseFloat(p.estimatedValueUSD);
@@ -513,7 +510,7 @@ export default function LpCheckerPage() {
               <div style={{ fontSize: 14 }}>해당 주소의 CL 포지션을 찾을 수 없습니다.</div>
             )}
             <div style={{ display: 'grid', gap: 10 }}>
-              {clPositions.filter((p) => !onlyPositive || (p.isActive && p.isInRange !== false)).map((p: any) => {
+              {clPositions.filter((p) => !onlyPositive || p.isActive).map((p: any) => {
                 const invert = !!invertMap[p.tokenId];
                 const baseSym = invert ? (p.token1Symbol || 'Token1') : (p.token0Symbol || 'Token0');
                 const quoteSym = invert ? (p.token0Symbol || 'Token0') : (p.token1Symbol || 'Token1');
@@ -544,12 +541,7 @@ export default function LpCheckerPage() {
                       🎁 게이지에 스테이킹됨 – 보상 획득 중
                     </div>
                   )}
-                  {p.isInRange === false && (
-                    <div style={{ fontSize: 13, marginBottom: 10, padding: '8px 12px', background: theme.warningBg, color: theme.warning, borderRadius: 8 }}>
-                      ⚠️ 현재 가격이 지정한 범위를 벗어났습니다
-                    </div>
-                  )}
-                  {(!p.isStaked && (p.liquidity === "0" || p.isActive === false)) && (
+                  {p.isActive === false && !p.isStaked && (
                     <div style={{ fontSize: 13, marginBottom: 10, padding: '8px 12px', background: theme.warningBg, color: theme.warning, borderRadius: 8 }}>
                       ⚠️ 인출됨 – 풀에 유동성 없음
                     </div>
@@ -681,3 +673,5 @@ export default function LpCheckerPage() {
     </div>
   );
 }
+
+

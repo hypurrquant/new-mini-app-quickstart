@@ -90,5 +90,3 @@ export default function PerformanceChart({ positions, darkMode, theme }: Perform
   );
 }
 
-
-
