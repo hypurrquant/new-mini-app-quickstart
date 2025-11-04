@@ -994,11 +994,6 @@ function LpCheckerPageContent() {
       <style jsx global>{`
         @keyframes pulse { 0% { opacity: .6 } 50% { opacity: 1 } 100% { opacity: .6 } }
       `}</style>
-      {copied && (
-        <div style={{ position: 'fixed', right: 16, bottom: 16, background: darkMode ? '#333' : '#111', color: '#fff', padding: '8px 12px', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-          Copied!
-        </div>
-      )}
       
       {/* Guide Popup */}
       {showGuide && (
