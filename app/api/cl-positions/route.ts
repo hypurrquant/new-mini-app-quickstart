@@ -524,11 +524,11 @@ export async function GET(request: Request) {
         const pool = uniquePools[i];
         const slot0Res = poolResults[i * 2 + 0];
         const liqRes = poolResults[i * 2 + 1];
-        const slot0 = slot0Res.status === "success" ? slot0Res.result : undefined;
+        const slot0 = slot0Res.status === "success" ? slot0Res.result as readonly [bigint, number, number, number, number, boolean] : undefined;
         const poolLiq = liqRes.status === "success" ? (liqRes.result as bigint) : undefined;
         for (const p of positions) {
           if (p.pool === pool) {
-            if (slot0) p.slot0 = { sqrtPriceX96: (slot0[0] as bigint).toString(), tick: Number(slot0[1]) };
+            if (slot0) p.slot0 = { sqrtPriceX96: slot0[0].toString(), tick: Number(slot0[1]) };
             if (poolLiq !== undefined) p.poolLiquidity = poolLiq.toString();
           }
         }
