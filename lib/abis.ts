@@ -20,7 +20,7 @@ export const ERC20_ABI = [
     inputs: [{ name: "owner", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
   },
-];
+] as const;
 
 export const AERODROME_PAIR_ABI = [
   {
@@ -83,7 +83,7 @@ export const AERODROME_PAIR_ABI = [
     inputs: [{ name: "owner", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
   },
-];
+] as const;
 
 export const NPM_ABI = [
   // ERC165: supportsInterface(bytes4)
@@ -141,7 +141,7 @@ export const NPM_ABI = [
       { name: "tokensOwed1", type: "uint128" },
     ],
   },
-];
+] as const;
 
 export const CL_FACTORY_ABI = [
   {
@@ -155,7 +155,7 @@ export const CL_FACTORY_ABI = [
     ],
     outputs: [{ name: "pool", type: "address" }],
   },
-];
+] as const;
 
 export const CL_POOL_ABI = [
   {
@@ -193,7 +193,7 @@ export const CL_POOL_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "uint128" }],
   },
-];
+] as const;
 
 export const CL_GAUGE_ABI = [
   {
@@ -241,7 +241,7 @@ export const CL_GAUGE_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
   },
-];
+] as const;
 
 export const SUGAR_HELPER_ABI = [
   {
@@ -301,5 +301,5 @@ export const SUGAR_HELPER_ABI = [
     inputs: [{ name: "sqrtPriceX96", type: "uint160" }],
     outputs: [{ name: "tick", type: "int24" }],
   },
-];
+] as const;
 
