@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import AttendanceCheck from "./components/AttendanceCheck";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
@@ -118,6 +119,20 @@ export default function Home() {
           </button>
         </div>
       </header>
+
+      {/* 출석 체크 컴포넌트 */}
+      <div style={{
+        position: 'relative',
+        zIndex: 10,
+        padding: '16px 24px',
+        background: darkMode ? 'rgba(10, 10, 10, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${theme.border}`,
+      }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <AttendanceCheck darkMode={darkMode} theme={theme} />
+        </div>
+      </div>
 
       {/* Hero Section */}
       <main style={{
