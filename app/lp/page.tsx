@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { publicClient } from "../../lib/viemClient";
 import { AERODROME_PAIR_ABI, ERC20_ABI } from "../../lib/abis";
@@ -184,77 +184,42 @@ function LpCheckerPageContent() {
 
   // V3 only: no v2 auto-discovery
 
-  // Track last searched address to avoid redundant searches
-  const lastSearchedAddressRef = useRef<string | null>(null);
-
-  // Function to fetch CL positions
-  const fetchClPositions = useCallback(async (address: Address) => {
-    if (clLoading) return;
-    
-    const addressKey = address.toLowerCase();
-    
-    // Skip if already searched this address
-    if (lastSearchedAddressRef.current === addressKey) {
-      return;
-    }
-    
-    const now = Date.now();
-    if (now - lastClFetchAtRef.current < AUTO_FETCH_COOLDOWN_MS) return;
-    if (now < nextAllowedCLAtRef.current) return;
-    
-    lastClFetchAtRef.current = now;
-    lastSearchedAddressRef.current = addressKey;
-    
-    try {
-      setClLoading(true);
-      setClError(null);
-      const res = await fetch(`/api/cl-positions?owner=${address}`);
-      if (!res.ok) {
-        setClError("CL fetch failed");
-        setClLoading(false);
+  // V3 only: auto discover CL positions when connected
+  useEffect(() => {
+    if (!ownerAddress) return;
+    if (clLoading || clPositions.length > 0) return;
+    (async () => {
+      const now = Date.now();
+      if (now - lastClFetchAtRef.current < AUTO_FETCH_COOLDOWN_MS) return;
+      if (now < nextAllowedCLAtRef.current) return;
+      lastClFetchAtRef.current = now;
+      try {
+        setClLoading(true);
+        setClError(null);
+        const res = await fetch(`/api/cl-positions?owner=${ownerAddress}`);
+        if (!res.ok) {
+          setClError("CL fetch failed");
+          setClLoading(false);
+          nextAllowedCLAtRef.current = Date.now() + FAIL_BACKOFF_MS;
+          return;
+        }
+        const data = await res.json();
+        setClPositions(data?.positions || []);
+      } catch (e) {
+        setClError(e instanceof Error ? e.message : String(e));
         nextAllowedCLAtRef.current = Date.now() + FAIL_BACKOFF_MS;
-        return;
+      } finally {
+        setClLoading(false);
       }
-      const data = await res.json();
-      setClPositions(data?.positions || []);
-    } catch (e) {
-      setClError(e instanceof Error ? e.message : String(e));
-      nextAllowedCLAtRef.current = Date.now() + FAIL_BACKOFF_MS;
-    } finally {
-      setClLoading(false);
-    }
-  }, [clLoading]);
-
-  // Auto-search when wallet connects or ownerAddress changes
-  useEffect(() => {
-    if (!ownerAddress) {
-      // Clear positions when no address
-      setClPositions([]);
-      lastSearchedAddressRef.current = null;
-      return;
-    }
-    
-    // Automatically fetch positions when ownerAddress is available
-    fetchClPositions(ownerAddress);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ownerAddress, isConnected]);
-
-  // Clear positions when wallet disconnects
-  useEffect(() => {
-    if (!isConnected) {
-      setClPositions([]);
-      lastSearchedAddressRef.current = null;
-      lastClFetchAtRef.current = 0;
-    }
-  }, [isConnected]);
+    })();
+  }, [ownerAddress, results, clLoading, clPositions.length]);
 
   // Refresh now triggers CL fetch (silent refresh if data exists)
-  const onRefresh = useCallback(async (silent = false) => {
+  const onRefresh = async (silent = false) => {
     if (!ownerAddress || !isConnected) return;
     try {
       // Only show loading skeleton if no positions exist yet
-      const currentHasPositions = clPositions.length > 0;
-      if (!silent && !currentHasPositions) {
+      if (!silent && clPositions.length === 0) {
         setClLoading(true);
       }
       setClError(null);
@@ -265,14 +230,11 @@ function LpCheckerPageContent() {
     } catch (e) {
       setClError(e instanceof Error ? e.message : String(e));
     } finally {
-      if (!silent) {
-        const currentHasPositions = clPositions.length > 0;
-        if (!currentHasPositions) {
-          setClLoading(false);
-        }
+      if (!silent && clPositions.length === 0) {
+        setClLoading(false);
       }
     }
-  }, [ownerAddress, isConnected]);
+  };
 
   // Auto-refresh every 60 seconds
   useEffect(() => {
@@ -297,17 +259,17 @@ function LpCheckerPageContent() {
         autoRefreshInterval.current = null;
       }
     };
-  }, [ownerAddress, isConnected, onRefresh]);
+  }, [ownerAddress, isConnected]);
 
   // Pull-to-refresh handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (typeof window !== 'undefined' && window.scrollY === 0) {
+    if (window.scrollY === 0) {
       touchStartY.current = e.touches[0].clientY;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartY.current === 0 || (typeof window !== 'undefined' && window.scrollY > 0)) return;
+    if (touchStartY.current === 0 || window.scrollY > 0) return;
     
     const touchY = e.touches[0].clientY;
     const distance = touchY - touchStartY.current;
@@ -328,17 +290,8 @@ function LpCheckerPageContent() {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 840,
-        margin: "0 auto",
-        padding: 16,
-        minHeight: '100vh',
-        background: theme.bg,
-        color: theme.text,
-        transition: 'background 0.3s, color 0.3s',
-        position: 'relative'
-      }}
+    <div 
+      style={{ maxWidth: 840, margin: "0 auto", padding: 16, minHeight: '100vh', background: theme.bg, color: theme.text, transition: 'background 0.3s, color 0.3s', position: 'relative' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -885,6 +838,18 @@ function LpCheckerPageContent() {
                 borderRadius: 12,
                 border: `2px dashed ${theme.border}`,
               }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+                <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+                  No CL positions found for this owner
+                </div>
+                <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 24 }}>
+                  {ownerAddress ? (
+                    <>Connected wallet has no Aerodrome CL positions</>
+                  ) : (
+                    <>Connect your wallet or search by address</>
+                  )}
+                </div>
+                
                 {!showAddressInput ? (
                   <button
                     onClick={() => setShowAddressInput(true)}
@@ -898,7 +863,6 @@ function LpCheckerPageContent() {
                       borderRadius: 8,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
-                      marginBottom: 24,
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-2px)';
@@ -913,20 +877,7 @@ function LpCheckerPageContent() {
                   >
                     🔎 Search by Address
                   </button>
-                ) : null}
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-                <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
-                  No CL positions found for this owner
-                </div>
-                <div style={{ fontSize: 14, color: theme.textSecondary }}>
-                  {ownerAddress ? (
-                    <>Connected wallet has no Aerodrome CL positions</>
-                  ) : (
-                    <>Connect your wallet or search by address</>
-                  )}
-                </div>
-                
-                {showAddressInput ? (
+                ) : (
                   <div style={{ maxWidth: 500, margin: '0 auto' }}>
                     <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                       <input

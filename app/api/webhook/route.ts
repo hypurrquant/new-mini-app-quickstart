@@ -165,7 +165,7 @@ export async function POST(request: Request) {
       const message = body.data.message || body.data.cast;
       const text = message?.text || '';
       const mentions = message?.mentions;
-      const replyTo = message?.replyTo || body.data.cast?.parentHash;
+      const replyTo = (message && 'replyTo' in message ? message.replyTo : undefined) || body.data.cast?.parentHash;
       const fid = body.data.fid;
       
       // For group chats, only respond when mentioned or replied to

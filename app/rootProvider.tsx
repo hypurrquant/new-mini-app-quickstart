@@ -52,7 +52,7 @@ if (typeof window !== "undefined") {
         return new Response(null, { status: 403 });
       });
     }
-    return originalFetch.apply(window, args);
+    return originalFetch.apply(window, args as [RequestInfo | URL, RequestInit?]);
   };
 }
 
