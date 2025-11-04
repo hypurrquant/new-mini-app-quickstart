@@ -32,6 +32,8 @@ export async function generateMetadata(): Promise<Metadata> {
       // MiniApp embed metadata for Base App
       // Required for rich embeds when app is shared
       // @see https://docs.base.org/mini-apps/core-concepts/embeds-and-previews
+      // MiniApp embed metadata - splashImageUrl and splashBackgroundColor 
+      // will default to manifest values if not specified (per Base docs)
       "fc:miniapp": JSON.stringify({
         version: "next",
         imageUrl: minikitConfig.miniapp.heroImageUrl,
@@ -41,8 +43,6 @@ export async function generateMetadata(): Promise<Metadata> {
             type: "launch_frame",
             url: ROOT_URL,
             name: minikitConfig.miniapp.name,
-            splashImageUrl: minikitConfig.miniapp.splashImageUrl,
-            splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
           },
         },
       }),
