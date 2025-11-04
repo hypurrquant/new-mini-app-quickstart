@@ -181,14 +181,14 @@ export async function POST(request: Request) {
       const { intent } = parseIntent(text);
       
       // Generate response
-      const { message, reaction } = generateResponse(intent, fid);
+      const { message: responseMessage, reaction } = generateResponse(intent, fid);
       
       // Return response that Base App will send
       // Note: Actual implementation depends on Base App's webhook response format
       return NextResponse.json({
         ok: true,
         response: {
-          message,
+          message: responseMessage,
           reaction,
           // Quick actions for better UX
           quickActions: intent === 'onboarding' ? [

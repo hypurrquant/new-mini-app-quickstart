@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { publicClient } from "../../lib/viemClient";
 import { AERODROME_PAIR_ABI, ERC20_ABI } from "../../lib/abis";
@@ -249,11 +249,12 @@ function LpCheckerPageContent() {
   }, [isConnected]);
 
   // Refresh now triggers CL fetch (silent refresh if data exists)
-  const onRefresh = async (silent = false) => {
+  const onRefresh = useCallback(async (silent = false) => {
     if (!ownerAddress || !isConnected) return;
     try {
       // Only show loading skeleton if no positions exist yet
-      if (!silent && clPositions.length === 0) {
+      const currentHasPositions = clPositions.length > 0;
+      if (!silent && !currentHasPositions) {
         setClLoading(true);
       }
       setClError(null);
@@ -264,11 +265,14 @@ function LpCheckerPageContent() {
     } catch (e) {
       setClError(e instanceof Error ? e.message : String(e));
     } finally {
-      if (!silent && clPositions.length === 0) {
-        setClLoading(false);
+      if (!silent) {
+        const currentHasPositions = clPositions.length > 0;
+        if (!currentHasPositions) {
+          setClLoading(false);
+        }
       }
     }
-  };
+  }, [ownerAddress, isConnected]);
 
   // Auto-refresh every 60 seconds
   useEffect(() => {
@@ -293,17 +297,17 @@ function LpCheckerPageContent() {
         autoRefreshInterval.current = null;
       }
     };
-  }, [ownerAddress, isConnected]);
+  }, [ownerAddress, isConnected, onRefresh]);
 
   // Pull-to-refresh handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY === 0) {
+    if (typeof window !== 'undefined' && window.scrollY === 0) {
       touchStartY.current = e.touches[0].clientY;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartY.current === 0 || window.scrollY > 0) return;
+    if (touchStartY.current === 0 || (typeof window !== 'undefined' && window.scrollY > 0)) return;
     
     const touchY = e.touches[0].clientY;
     const distance = touchY - touchStartY.current;
@@ -324,8 +328,17 @@ function LpCheckerPageContent() {
   };
 
   return (
-    <div 
-      style={{ maxWidth: 840, margin: "0 auto", padding: 16, minHeight: '100vh', background: theme.bg, color: theme.text, transition: 'background 0.3s, color 0.3s', position: 'relative' }}
+    <div
+      style={{
+        maxWidth: 840,
+        margin: "0 auto",
+        padding: 16,
+        minHeight: '100vh',
+        background: theme.bg,
+        color: theme.text,
+        transition: 'background 0.3s, color 0.3s',
+        position: 'relative'
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
