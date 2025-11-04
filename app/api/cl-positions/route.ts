@@ -553,7 +553,7 @@ export async function GET(request: Request) {
         const decRes = tokenResults[i * 2 + 1];
         tokenInfo.set(uniqueTokens[i].toLowerCase(), {
           symbol: symRes.status === "success" ? (symRes.result as string) : undefined,
-          decimals: decRes.status === "success" ? Number(decRes.result as bigint) : undefined,
+          decimals: decRes.status === "success" ? Number(decRes.result) : undefined,
         });
       }
       (positions as any[]).forEach((p) => {
