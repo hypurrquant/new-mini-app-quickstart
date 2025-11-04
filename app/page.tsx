@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import AttendanceCheck from "./components/AttendanceCheck";
+import LPCalculator from "./components/LPCalculator";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
@@ -94,7 +94,7 @@ export default function Home() {
         <div style={{ 
           fontSize: 24, 
           fontWeight: 800, 
-          background: theme.gradient,
+          backgroundImage: theme.gradient,
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
@@ -120,20 +120,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 출석 체크 컴포넌트 */}
-      <div style={{
-        position: 'relative',
-        zIndex: 10,
-        padding: '16px 24px',
-        background: darkMode ? 'rgba(10, 10, 10, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${theme.border}`,
-      }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <AttendanceCheck darkMode={darkMode} theme={theme} />
-        </div>
-      </div>
-
       {/* Hero Section */}
       <main style={{
         position: 'relative',
@@ -145,32 +131,55 @@ export default function Home() {
       }}>
         {/* Main Title */}
         <div style={{
-          marginBottom: 24,
+          marginBottom: 32,
           animation: 'fadeInUp 0.8s ease-out',
         }}>
+          {/* Badge */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 12px',
+            borderRadius: 20,
+            background: darkMode ? 'rgba(66, 165, 245, 0.2)' : 'rgba(37, 99, 235, 0.1)',
+            border: darkMode ? `1px solid rgba(66, 165, 245, 0.3)` : 'none',
+            color: theme.accent,
+            fontSize: 14,
+            fontWeight: 600,
+            marginBottom: 24,
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: theme.accent }}></span>
+            Discover profitable LP strategies
+          </div>
+          
           <h1 style={{
-            fontSize: 'clamp(40px, 8vw, 72px)',
+            fontSize: 'clamp(48px, 10vw, 96px)',
             fontWeight: 900,
             lineHeight: 1.1,
-            marginBottom: 16,
-            background: theme.gradient,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            marginBottom: 24,
+            color: theme.text,
+            letterSpacing: '-0.02em',
           }}>
-            Track Your LP Positions
+            Share. Mint. Profit.
             <br />
-            Like a Pro
+            <span style={{
+              backgroundImage: theme.gradient,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>
+              Up to 50% APY.
+            </span>
           </h1>
           <p style={{
-            fontSize: 'clamp(18px, 3vw, 24px)',
+            fontSize: 'clamp(20px, 3.5vw, 28px)',
             color: theme.textSecondary,
-            maxWidth: 700,
+            maxWidth: 800,
             margin: '0 auto',
             lineHeight: 1.6,
+            fontWeight: 400,
           }}>
-            Real-time monitoring of your Aerodrome Concentrated Liquidity positions. 
-            Track rewards, analyze performance, and never miss an opportunity.
+            Stop guessing which tokens to choose. Stop worrying about setting the right range. Join thousands who are earning safe, compounding returns with curated strategies that actually work.
           </p>
         </div>
 
@@ -183,230 +192,200 @@ export default function Home() {
             href="/lp"
             style={{
               display: 'inline-block',
-              padding: '18px 48px',
-              fontSize: 20,
+              padding: '20px 56px',
+              fontSize: 18,
               fontWeight: 700,
               color: '#ffffff',
               background: theme.gradient,
-              border: 'none',
-              borderRadius: 16,
-              cursor: 'pointer',
-              textDecoration: 'none',
-              transition: 'all 0.3s ease',
-              boxShadow: darkMode 
-                ? '0 8px 32px rgba(66, 165, 245, 0.3)' 
-                : '0 8px 32px rgba(37, 99, 235, 0.3)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = darkMode 
-                ? '0 12px 40px rgba(66, 165, 245, 0.4)' 
-                : '0 12px 40px rgba(37, 99, 235, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = darkMode 
-                ? '0 8px 32px rgba(66, 165, 245, 0.3)' 
-                : '0 8px 32px rgba(37, 99, 235, 0.3)';
-            }}
-          >
-            🚀 Launch App
-          </Link>
-        </div>
-
-        {/* Feature Cards */}
-        <div style={{
-          marginTop: 100,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 24,
-          animation: 'fadeInUp 1.2s ease-out',
-        }}>
-          {[
-            {
-              icon: '📊',
-              title: 'Real-Time Tracking',
-              description: 'Monitor your positions with live data updates every 60 seconds',
-            },
-            {
-              icon: '💰',
-              title: 'Rewards Analytics',
-              description: 'Track claimable rewards and estimated daily/weekly/monthly earnings',
-            },
-            {
-              icon: '📈',
-              title: 'Performance Insights',
-              description: 'View APR, ROI, and detailed position history at a glance',
-            },
-            {
-              icon: '🎯',
-              title: 'Price Range Monitor',
-              description: 'Stay informed about your CL position price ranges and current prices',
-            },
-            {
-              icon: '🔄',
-              title: 'Auto-Refresh',
-              description: 'Set it and forget it - automatic updates keep you informed',
-            },
-            {
-              icon: '🌙',
-              title: 'Beautiful UI',
-              description: 'Sleek design with dark mode support for comfortable viewing',
-            },
-          ].map((feature, idx) => (
-            <div
-              key={idx}
-              style={{
-                padding: 32,
-                background: theme.cardBg,
-                border: `1px solid ${theme.border}`,
-                borderRadius: 16,
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                animationDelay: `${idx * 0.1}s`,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-8px)';
-                e.currentTarget.style.borderColor = theme.accent;
-                e.currentTarget.style.boxShadow = darkMode
-                  ? '0 12px 32px rgba(66, 165, 245, 0.2)'
-                  : '0 12px 32px rgba(37, 99, 235, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = theme.border;
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              <div style={{ fontSize: 48, marginBottom: 16 }}>{feature.icon}</div>
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>
-                {feature.title}
-              </h3>
-              <p style={{ fontSize: 14, color: theme.textSecondary, lineHeight: 1.6 }}>
-                {feature.description}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Stats Section */}
-        <div style={{
-          marginTop: 100,
-          padding: 48,
-          background: theme.cardBg,
-          border: `1px solid ${theme.border}`,
-          borderRadius: 24,
-          animation: 'fadeInUp 1.4s ease-out',
-        }}>
-          <h2 style={{
-            fontSize: 36,
-            fontWeight: 800,
-            marginBottom: 48,
-            background: theme.gradient,
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>
-            Why LPing?
-          </h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: 32,
-          }}>
-            {[
-              { value: 'Free', label: 'Forever' },
-              { value: '100%', label: 'Open Source' },
-              { value: '<1s', label: 'Load Time' },
-              { value: '24/7', label: 'Monitoring' },
-            ].map((stat, idx) => (
-              <div key={idx}>
-                <div style={{
-                  fontSize: 48,
-                  fontWeight: 900,
-                  color: theme.accent,
-                  marginBottom: 8,
-                }}>
-                  {stat.value}
-                </div>
-                <div style={{
-                  fontSize: 16,
-                  color: theme.textSecondary,
-                  fontWeight: 600,
-                }}>
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Final CTA */}
-        <div style={{
-          marginTop: 100,
-          padding: 64,
-          background: theme.gradient,
-          borderRadius: 24,
-          animation: 'fadeInUp 1.6s ease-out',
-        }}>
-          <h2 style={{
-            fontSize: 40,
-            fontWeight: 800,
-            color: '#ffffff',
-            marginBottom: 16,
-          }}>
-            Ready to optimize your LP?
-          </h2>
-          <p style={{
-            fontSize: 18,
-            color: 'rgba(255, 255, 255, 0.9)',
-            marginBottom: 32,
-            maxWidth: 600,
-            margin: '0 auto 32px',
-          }}>
-            Join hundreds of LPs who are already tracking their positions with LPing
-          </p>
-          <Link 
-            href="/lp"
-            style={{
-              display: 'inline-block',
-              padding: '18px 48px',
-              fontSize: 20,
-              fontWeight: 700,
-              color: theme.text,
-              background: darkMode ? '#ffffff' : '#ffffff',
               border: 'none',
               borderRadius: 12,
               cursor: 'pointer',
               textDecoration: 'none',
               transition: 'all 0.3s ease',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+              boxShadow: darkMode 
+                ? '0 8px 32px rgba(66, 165, 245, 0.4)' 
+                : '0 8px 32px rgba(37, 99, 235, 0.4)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.05)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = darkMode 
+                ? '0 12px 40px rgba(66, 165, 245, 0.5)' 
+                : '0 12px 40px rgba(37, 99, 235, 0.5)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = darkMode 
+                ? '0 8px 32px rgba(66, 165, 245, 0.4)' 
+                : '0 8px 32px rgba(37, 99, 235, 0.4)';
             }}
           >
-            Get Started Now →
+            Start Exploring
           </Link>
         </div>
+
+        {/* Social Proof */}
+        <div style={{
+          marginTop: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          animation: 'fadeInUp 1.2s ease-out',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: -8,
+          }}>
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: theme.gradient,
+                  border: `3px solid ${theme.bg}`,
+                  marginLeft: i > 1 ? -12 : 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                {String.fromCharCode(65 + i - 1)}
+              </div>
+            ))}
+          </div>
+          <p style={{
+            fontSize: 15,
+            color: theme.textSecondary,
+            margin: 0,
+          }}>
+            Join thousands already discovering profitable positions powered by Aerodrome Finance.
+          </p>
+        </div>
+
+        {/* Feature Cards Section */}
+        <div style={{
+          padding: '80px 0',
+          marginTop: 120,
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: 32,
+            maxWidth: 1200,
+            margin: '0 auto',
+            padding: '0 24px',
+            animation: 'fadeInUp 1.2s ease-out',
+          }}>
+          {[
+            {
+              title: 'Not Sure Which Tokens?',
+              description: 'We curate the best pools and optimal ranges. Get expert recommendations designed for long-term stability.',
+              accentColor: darkMode ? '#64b5f6' : theme.accent,
+            },
+            {
+              title: 'See What Others Are Doing',
+              description: 'Discover successful strategies from top performers. Learn from real portfolios and follow what works.',
+              accentColor: darkMode ? '#ce93d8' : '#9c27b0',
+            },
+            {
+              title: 'Safe Returns, Compounding Growth',
+              description: 'Wide-range positions for stability. Avoid risky leverage and earn consistent yield with compounding effects.',
+              accentColor: darkMode ? '#81c784' : '#4caf50',
+            },
+          ].map((feature, idx) => (
+            <div
+              key={idx}
+              style={{
+                padding: 40,
+                background: theme.cardBg,
+                borderRadius: 16,
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                animationDelay: `${idx * 0.1}s`,
+                boxShadow: darkMode
+                  ? '0 4px 12px rgba(0, 0, 0, 0.4)'
+                  : '0 4px 12px rgba(0, 0, 0, 0.05)',
+                borderLeft: `4px solid ${feature.accentColor}`,
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = darkMode
+                  ? '0 8px 24px rgba(0, 0, 0, 0.6)'
+                  : '0 8px 24px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = darkMode
+                  ? '0 4px 12px rgba(0, 0, 0, 0.4)'
+                  : '0 4px 12px rgba(0, 0, 0, 0.05)';
+              }}
+            >
+              <h3 style={{ 
+                fontSize: 24, 
+                fontWeight: 800, 
+                marginBottom: 12,
+                color: theme.text,
+                letterSpacing: '-0.01em',
+                lineHeight: 1.3,
+              }}>
+                {feature.title}
+              </h3>
+              <p style={{ 
+                fontSize: 15, 
+                color: theme.textSecondary, 
+                lineHeight: 1.6,
+                fontWeight: 400,
+              }}>
+                {feature.description}
+              </p>
+            </div>
+          ))}
+          </div>
+        </div>
+
+        {/* LP Calculator Section */}
+        <LPCalculator darkMode={darkMode} theme={theme} />
       </main>
 
       {/* Footer */}
       <footer style={{
         position: 'relative',
         zIndex: 1,
-        padding: '32px 24px',
-        textAlign: 'center',
+        padding: '48px 24px',
         borderTop: `1px solid ${theme.border}`,
-        color: theme.textSecondary,
-        fontSize: 14,
+        background: darkMode ? '#0a0a0a' : '#ffffff',
       }}>
-        <p>Built with ❤️ for the Aerodrome community</p>
+        <div style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <div style={{
+            fontSize: 20,
+            fontWeight: 800,
+            backgroundImage: theme.gradient,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            LPing
+          </div>
+          <div style={{
+            fontSize: 14,
+            color: theme.textSecondary,
+          }}>
+            © {new Date().getFullYear()} LPing. All rights reserved.
+          </div>
+        </div>
       </footer>
 
       {/* Animations */}

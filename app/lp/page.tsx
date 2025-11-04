@@ -8,6 +8,7 @@ import { Address, formatUnits, isAddress } from "viem";
 import { useAccount, useDisconnect } from "wagmi";
 import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 import Link from "next/link";
+import { getAttendanceData } from "../../lib/points";
 
 const FEE_BPS_VOLATILE = Number(process.env.NEXT_PUBLIC_FEE_BPS_VOLATILE ?? "30"); // 0.30%
 const FEE_BPS_STABLE = Number(process.env.NEXT_PUBLIC_FEE_BPS_STABLE ?? "2"); // 0.02%
@@ -82,6 +83,7 @@ function LpCheckerPageContent() {
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [showRewards, setShowRewards] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [showAddressInput, setShowAddressInput] = useState(false);
@@ -105,10 +107,13 @@ function LpCheckerPageContent() {
       if (guideRef.current && !guideRef.current.contains(event.target as Node)) {
         setShowGuide(false);
       }
+      if (showRewards && !document.getElementById('rewards-modal')?.contains(event.target as Node)) {
+        setShowRewards(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [showRewards]);
 
   // Load dark mode preference from localStorage
   useEffect(() => {
@@ -318,7 +323,20 @@ function LpCheckerPageContent() {
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>LPing</h1>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <div style={{ 
+            fontSize: 24, 
+            fontWeight: 800, 
+            backgroundImage: darkMode 
+              ? 'linear-gradient(135deg, #42a5f5 0%, #81c784 100%)'
+              : 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            LPing
+          </div>
+        </Link>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           {/* Guide Button */}
           <button
@@ -504,9 +522,37 @@ function LpCheckerPageContent() {
                   <span>{darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}</span>
                 </button>
                 
-                {/* Language Toggle */}
-                <Link 
-                  href="/lp/ko" 
+                {/* Rewards */}
+                <button
+                  onClick={() => {
+                    setShowRewards(true);
+                    setShowSettingsMenu(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: `1px solid ${theme.border}`,
+                    color: theme.text,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = theme.bgSecondary}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  🎁 Rewards
+                </button>
+                
+                {/* Docs */}
+                <a
+                  href="https://docs.base.org" 
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     width: '100%',
                     padding: '12px 16px',
@@ -525,8 +571,8 @@ function LpCheckerPageContent() {
                   onMouseEnter={(e) => e.currentTarget.style.background = theme.bgSecondary}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  🌐 한국어
-                </Link>
+                  📚 Docs
+                </a>
                 
                 {/* Home Link */}
                 <Link 
@@ -557,11 +603,6 @@ function LpCheckerPageContent() {
         </div>
       </div>
 
-      {!ownerAddress && (
-        <div style={{ marginBottom: 16, padding: 12, background: theme.infoBg, border: `1px solid ${theme.infoBorder}`, borderRadius: 8 }}>
-          지갑을 연결하거나 <code style={{ background: theme.bgSecondary, padding: '2px 6px', borderRadius: 4 }}>view</code> 파라미터로 조회 주소를 제공하세요.
-        </div>
-      )}
 
       {/* Error banner removed for cleaner UX; errors are silently retried/backed off */}
 
@@ -1695,6 +1736,98 @@ function LpCheckerPageContent() {
               >
                 Got it!
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rewards Modal */}
+      {showRewards && (
+        <div
+          id="rewards-modal"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+          }}
+          onClick={() => setShowRewards(false)}
+        >
+          <div
+            style={{
+              background: theme.bgCard,
+              borderRadius: 16,
+              padding: 32,
+              maxWidth: 480,
+              width: '100%',
+              boxShadow: darkMode ? '0 8px 32px rgba(0,0,0,0.6)' : '0 8px 32px rgba(0,0,0,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: theme.text }}>🎁 Rewards</h2>
+              <button
+                onClick={() => setShowRewards(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: 24,
+                  color: theme.textSecondary,
+                  cursor: 'pointer',
+                  padding: 0,
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: '48px 24px',
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontSize: 64,
+                marginBottom: 24,
+              }}>
+                🎁
+              </div>
+              <div style={{
+                fontSize: 32,
+                fontWeight: 700,
+                marginBottom: 12,
+                backgroundImage: darkMode 
+                  ? 'linear-gradient(135deg, #42a5f5 0%, #81c784 100%)'
+                  : 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>
+                Coming Soon
+              </div>
+              <div style={{
+                fontSize: 16,
+                color: theme.textSecondary,
+                lineHeight: 1.6,
+              }}>
+                We're working on something amazing.<br />
+                Stay tuned for exciting rewards!
+              </div>
             </div>
           </div>
         </div>
