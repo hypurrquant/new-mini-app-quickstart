@@ -1,37 +1,25 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { publicClient } from "../../lib/viemClient";
-import { AERODROME_PAIR_ABI, ERC20_ABI } from "../../lib/abis";
-import { Address, formatUnits, isAddress } from "viem";
-import { useAccount, useDisconnect } from "wagmi";
-import { ConnectWallet } from "@coinbase/onchainkit/wallet";
-import Link from "next/link";
-import { getAttendanceData } from "../../lib/points";
+import { Address, isAddress } from "viem";
+import { useAccount } from "wagmi";
+import type { LpResult, CLPosition, SortBy, SortOrder } from "./types";
+import { useTheme } from "./hooks/useTheme";
+import { usePositions } from "./hooks/usePositions";
+import { sortPositions } from "./utils/sortPositions";
+import Header from "./components/Header";
+import PortfolioOverview from "./components/PortfolioOverview";
 
 const FEE_BPS_VOLATILE = Number(process.env.NEXT_PUBLIC_FEE_BPS_VOLATILE ?? "30"); // 0.30%
 const FEE_BPS_STABLE = Number(process.env.NEXT_PUBLIC_FEE_BPS_STABLE ?? "2"); // 0.02%
 const AUTO_FETCH_COOLDOWN_MS = Number(process.env.NEXT_PUBLIC_LP_COOLDOWN_MS ?? "15000");
 const FAIL_BACKOFF_MS = Number(process.env.NEXT_PUBLIC_LP_FAIL_BACKOFF_MS ?? "30000");
 
-type LpResult = {
-  pairAddress: Address;
-  pairSymbol: string;
-  lpBalanceFormatted: string;
-  lpBalanceRaw: bigint;
-  sharePercent: string;
-  token0: { address: Address; symbol: string; amountFormatted: string };
-  token1: { address: Address; symbol: string; amountFormatted: string };
-  tvlUsd?: string;
-  positionUsd?: string;
-  aprPercent?: string;
-};
-
 function LpCheckerPageContent() {
   const searchParams = useSearchParams();
   const { address: connectedAddress, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  const { darkMode, setDarkMode, theme } = useTheme();
 
   const [lpInput, setLpInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,49 +27,11 @@ function LpCheckerPageContent() {
   const [results, setResults] = useState<LpResult[]>([]);
   const [lastFetchKey, setLastFetchKey] = useState<string | null>(null);
   const [discoveredOnce, setDiscoveredOnce] = useState(false);
-  const [clLoading, setClLoading] = useState(false);
-  const [clError, setClError] = useState<string | null>(null);
-  const [clPositions, setClPositions] = useState<
-    Array<{
-      tokenId: string;
-      token0: Address;
-      token1: Address;
-      token0Symbol?: string;
-      token1Symbol?: string;
-      pairSymbol?: string;
-      token0Decimals?: number;
-      token1Decimals?: number;
-      tickSpacing: number;
-      tickLower: number;
-      tickUpper: number;
-      liquidity: string;
-      liquidityRaw?: string;
-      isActive?: boolean;
-      isStaked?: boolean;
-      pool: Address | null;
-      slot0?: { sqrtPriceX96: string; tick: number };
-      poolLiquidity?: string;
-      price1Per0?: number;
-      price0Per1?: number;
-      priceRange1Per0Min?: number;
-      priceRange1Per0Max?: number;
-      priceRange0Per1Min?: number;
-      priceRange0Per1Max?: number;
-    }>
-  >([]);
   const [invertMap, setInvertMap] = useState<Record<string, boolean>>({}); // true => show 1 token1 in token0
-  const lastAutoFetchAtRef = useRef<number>(0);
-  const lastClFetchAtRef = useRef<number>(0);
-  const nextAllowedV2AtRef = useRef<number>(0);
-  const nextAllowedCLAtRef = useRef<number>(0);
-  const [copied, setCopied] = useState(false);
   const [tickClock, setTickClock] = useState(0);
-  const [darkMode, setDarkMode] = useState(false);
-  const [sortBy, setSortBy] = useState<'value' | 'apr' | 'daily' | 'pair'>('value');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState<SortBy>('value');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(new Set());
-  const [showWalletMenu, setShowWalletMenu] = useState(false);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
@@ -89,21 +39,12 @@ function LpCheckerPageContent() {
   const [showAddressInput, setShowAddressInput] = useState(false);
   const [addressInput, setAddressInput] = useState("");
   const [addressError, setAddressError] = useState("");
-  const walletMenuRef = useRef<HTMLDivElement>(null);
-  const settingsMenuRef = useRef<HTMLDivElement>(null);
   const guideRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
-  const autoRefreshInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (walletMenuRef.current && !walletMenuRef.current.contains(event.target as Node)) {
-        setShowWalletMenu(false);
-      }
-      if (settingsMenuRef.current && !settingsMenuRef.current.contains(event.target as Node)) {
-        setShowSettingsMenu(false);
-      }
       if (guideRef.current && !guideRef.current.contains(event.target as Node)) {
         setShowGuide(false);
       }
@@ -114,38 +55,6 @@ function LpCheckerPageContent() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showRewards]);
-
-  // Load dark mode preference from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('darkMode');
-    if (saved !== null) {
-      setDarkMode(saved === 'true');
-    }
-  }, []);
-
-  // Save dark mode preference to localStorage
-  useEffect(() => {
-    localStorage.setItem('darkMode', String(darkMode));
-  }, [darkMode]);
-
-  // Theme colors
-  const theme = {
-    bg: darkMode ? '#1a1a1a' : '#ffffff',
-    bgSecondary: darkMode ? '#2a2a2a' : '#fafafa',
-    bgCard: darkMode ? '#2d2d2d' : '#ffffff',
-    border: darkMode ? '#444' : '#eee',
-    text: darkMode ? '#e0e0e0' : '#000000',
-    textSecondary: darkMode ? '#a0a0a0' : '#666',
-    success: darkMode ? '#4caf50' : '#2e7d32',
-    successBg: darkMode ? '#1b5e20' : '#e8f5e9',
-    successBorder: darkMode ? '#2e7d32' : '#c8e6c9',
-    warning: darkMode ? '#ff9800' : '#c62828',
-    warningBg: darkMode ? '#e65100' : '#ffebee',
-    primary: darkMode ? '#42a5f5' : '#1976d2',
-    skeleton: darkMode ? '#3a3a3a' : '#f3f3f3',
-    infoBg: darkMode ? '#424242' : '#fff8e1',
-    infoBorder: darkMode ? '#616161' : '#ffecb5',
-  };
 
   const viewAddress = useMemo(() => {
     const v = searchParams.get("view");
@@ -162,6 +71,9 @@ function LpCheckerPageContent() {
   }, [searchParams]);
 
   const ownerAddress = viewAddress ?? connectedAddress;
+  
+  // Use positions hook
+  const { clPositions, clLoading, clError, refresh } = usePositions(ownerAddress, isConnected);
 
   const resolveLpAddresses = (): Address[] => {
     if (lpQueryFromUrl.length > 0) return lpQueryFromUrl;
@@ -172,94 +84,16 @@ function LpCheckerPageContent() {
     return fromInput;
   };
 
-  // No manual input persistence; discovery fills pairs automatically
-
   // Simple 1s ticker for countdowns
   useEffect(() => {
     const id = setInterval(() => setTickClock((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
-  // V3 only: no v2 auto-fetch
-
-  // V3 only: no v2 auto-discovery
-
-  // V3 only: auto discover CL positions when connected
-  useEffect(() => {
-    if (!ownerAddress) return;
-    if (clLoading || clPositions.length > 0) return;
-    (async () => {
-      const now = Date.now();
-      if (now - lastClFetchAtRef.current < AUTO_FETCH_COOLDOWN_MS) return;
-      if (now < nextAllowedCLAtRef.current) return;
-      lastClFetchAtRef.current = now;
-      try {
-        setClLoading(true);
-        setClError(null);
-        const res = await fetch(`/api/cl-positions?owner=${ownerAddress}`);
-        if (!res.ok) {
-          setClError("CL fetch failed");
-          setClLoading(false);
-          nextAllowedCLAtRef.current = Date.now() + FAIL_BACKOFF_MS;
-          return;
-        }
-        const data = await res.json();
-        setClPositions(data?.positions || []);
-      } catch (e) {
-        setClError(e instanceof Error ? e.message : String(e));
-        nextAllowedCLAtRef.current = Date.now() + FAIL_BACKOFF_MS;
-      } finally {
-        setClLoading(false);
-      }
-    })();
-  }, [ownerAddress, results, clLoading, clPositions.length]);
-
-  // Refresh now triggers CL fetch (silent refresh if data exists)
-  const onRefresh = async (silent = false) => {
-    if (!ownerAddress || !isConnected) return;
-    try {
-      // Only show loading skeleton if no positions exist yet
-      if (!silent && clPositions.length === 0) {
-        setClLoading(true);
-      }
-      setClError(null);
-      const res = await fetch(`/api/cl-positions?owner=${ownerAddress}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      setClPositions(data?.positions || []);
-    } catch (e) {
-      setClError(e instanceof Error ? e.message : String(e));
-    } finally {
-      if (!silent && clPositions.length === 0) {
-        setClLoading(false);
-      }
-    }
-  };
-
-  // Auto-refresh every 60 seconds
-  useEffect(() => {
-    if (!ownerAddress || !isConnected) {
-      // Clear interval when wallet disconnects
-      if (autoRefreshInterval.current) {
-        clearInterval(autoRefreshInterval.current);
-        autoRefreshInterval.current = null;
-      }
-      return;
-    }
-
-    // Set up auto-refresh
-    autoRefreshInterval.current = setInterval(() => {
-      onRefresh(true); // Silent refresh
-    }, 60000); // 60 seconds
-
-    // Cleanup on unmount or when dependencies change
-    return () => {
-      if (autoRefreshInterval.current) {
-        clearInterval(autoRefreshInterval.current);
-        autoRefreshInterval.current = null;
-      }
-    };
-  }, [ownerAddress, isConnected]);
+  // Refresh handler
+  const onRefresh = useCallback((silent = false) => {
+    refresh();
+  }, [refresh]);
 
   // Pull-to-refresh handlers
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -322,430 +156,19 @@ function LpCheckerPageContent() {
         </div>
       )}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <div style={{ 
-            fontSize: 24, 
-            fontWeight: 800, 
-            backgroundImage: darkMode 
-              ? 'linear-gradient(135deg, #42a5f5 0%, #81c784 100%)'
-              : 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}>
-            LPing
-          </div>
-        </Link>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          {/* Guide Button */}
-          <button
-            onClick={() => setShowGuide(!showGuide)}
-            style={{
-              padding: "8px 10px",
-              borderRadius: 8,
-              border: `1px solid ${theme.border}`,
-              background: theme.bgCard,
-              color: theme.text,
-              cursor: "pointer",
-              fontSize: 16,
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 36,
-              height: 36,
-            }}
-            title="Guide"
-          >
-            ?
-          </button>
-          
-          {/* Wallet Button with Dropdown */}
-          <div style={{ position: 'relative' }} ref={walletMenuRef}>
-            {connectedAddress ? (
-              <>
-                <button
-                  onClick={() => setShowWalletMenu(!showWalletMenu)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 8,
-                    border: `2px solid ${theme.success}`,
-                    background: theme.bgCard,
-                    color: theme.text,
-                    cursor: "pointer",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
-                  🟢 {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
-                </button>
-                
-                {showWalletMenu && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    right: 0,
-                    marginTop: 8,
-                    background: theme.bgCard,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: 12,
-                    boxShadow: darkMode ? '0 4px 12px rgba(0,0,0,0.4)' : '0 4px 12px rgba(0,0,0,0.15)',
-                    minWidth: 240,
-                    zIndex: 100,
-                  }}>
-                    <div style={{ 
-                      padding: '12px 16px', 
-                      borderBottom: `1px solid ${theme.border}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 8,
-                    }}>
-                      <div>
-                        <div style={{ fontSize: 11, color: theme.textSecondary, marginBottom: 4 }}>Connected Wallet</div>
-                        <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace' }}>
-                          {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(connectedAddress);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        }}
-                        style={{
-                          padding: '6px 8px',
-                          background: theme.bgSecondary,
-                          border: `1px solid ${theme.border}`,
-                          borderRadius: 6,
-                          cursor: 'pointer',
-                          fontSize: 16,
-                        }}
-                        title="Copy full address"
-                      >
-                        📋
-                      </button>
-                    </div>
-                    
-                    <button
-                      onClick={() => {
-                        disconnect();
-                        setShowWalletMenu(false);
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: theme.warning,
-                        cursor: 'pointer',
-                        fontSize: 14,
-                        textAlign: 'left',
-                        borderRadius: '0 0 12px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = theme.warningBg}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                    >
-                      🚪 Disconnect
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <ConnectWallet />
-            )}
-          </div>
-          
-          {/* Settings Menu Button */}
-          <div style={{ position: 'relative' }} ref={settingsMenuRef}>
-            <button
-              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 8,
-                border: `1px solid ${theme.border}`,
-                background: theme.bgCard,
-                color: theme.text,
-                cursor: "pointer",
-                fontSize: 20,
-                fontWeight: 600,
-                lineHeight: 1,
-              }}
-              title="Settings"
-            >
-              ⋮
-            </button>
-            
-            {showSettingsMenu && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: 8,
-                background: theme.bgCard,
-                border: `1px solid ${theme.border}`,
-                borderRadius: 12,
-                boxShadow: darkMode ? '0 4px 12px rgba(0,0,0,0.4)' : '0 4px 12px rgba(0,0,0,0.15)',
-                minWidth: 180,
-                zIndex: 100,
-              }}>
-                {/* Dark Mode Toggle */}
-                <button
-                  onClick={() => {
-                    setDarkMode(!darkMode);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: `1px solid ${theme.border}`,
-                    color: theme.text,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    textAlign: 'left',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 8,
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = theme.bgSecondary}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <span>{darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}</span>
-                </button>
-                
-                {/* Rewards */}
-                <button
-                  onClick={() => {
-                    setShowRewards(true);
-                    setShowSettingsMenu(false);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: `1px solid ${theme.border}`,
-                    color: theme.text,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    textAlign: 'left',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = theme.bgSecondary}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  🎁 Rewards
-                </button>
-                
-                {/* Docs */}
-                <a
-                  href="https://docs.base.org" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: `1px solid ${theme.border}`,
-                    color: theme.text,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    textAlign: 'left',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = theme.bgSecondary}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  📚 Docs
-                </a>
-                
-                {/* Home Link */}
-                <Link 
-                  href="/" 
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: theme.text,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    textAlign: 'left',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    textDecoration: 'none',
-                    borderRadius: '0 0 12px 12px',
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = theme.bgSecondary}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  🏠 Home
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <Header
+        theme={theme}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        onShowGuide={() => setShowGuide(true)}
+        onShowRewards={() => setShowRewards(true)}
+      />
 
 
       {/* Error banner removed for cleaner UX; errors are silently retried/backed off */}
 
       {/* Portfolio Overview Cards */}
-      {clPositions.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>📊</span> Portfolio Overview
-          </h2>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-            {/* Total Deposits */}
-            {(() => {
-              const activePositions = clPositions.filter((p: any) => p.isActive);
-              const totalDeposited = activePositions.reduce((sum, p: any) => {
-                if (p.estimatedValueUSD) {
-                  return sum + parseFloat(p.estimatedValueUSD);
-                }
-                return sum;
-              }, 0);
-              
-              return (
-                <div style={{ 
-                  padding: 16, 
-                  background: theme.bgCard, 
-                  borderRadius: 12, 
-                  border: `2px solid ${theme.border}`,
-                  boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.05)'
-                }}>
-                  <div style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
-                    Total Deposits
-                  </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: theme.text, marginBottom: 4 }}>
-                    ${totalDeposited.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  </div>
-                  <div style={{ fontSize: 13, color: theme.textSecondary }}>
-                    {activePositions.length} active position{activePositions.length !== 1 ? 's' : ''}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Total Claimable Rewards + Expected Daily */}
-            {(() => {
-              const stakedPositions = clPositions.filter((p: any) => p.isStaked);
-              
-              // Calculate total claimable (earned) rewards
-              const totalClaimable = stakedPositions.reduce((sum, p: any) => {
-                return sum + parseFloat(p.earnedAmountUSD || '0');
-              }, 0);
-              
-              // Calculate expected daily earnings
-              const totalEarnedPerYear = stakedPositions.reduce((sum, p: any) => {
-                return sum + parseFloat(p.rewardPerYearUSD || '0');
-              }, 0);
-              const expectedDaily = totalEarnedPerYear / 365.25;
-              
-              return (
-                <div style={{ 
-                  padding: 16, 
-                  background: theme.bgCard, 
-                  borderRadius: 12, 
-                  border: `2px solid ${theme.border}`,
-                  boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.05)'
-                }}>
-                  <div style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
-                    Claimable Rewards
-                  </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: theme.success, marginBottom: 4 }}>
-                    ${totalClaimable.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                  </div>
-                  <div style={{ fontSize: 13, color: theme.textSecondary, marginBottom: 6 }}>
-                    Ready to claim
-                  </div>
-                  {expectedDaily > 0 && (
-                    <div style={{ fontSize: 12, color: theme.textSecondary, paddingTop: 8, borderTop: `1px solid ${theme.border}` }}>
-                      Expected: <span style={{ fontWeight: 600, color: theme.success }}>${expectedDaily.toFixed(2)}/day</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* Average APR */}
-            {(() => {
-              const stakedPositions = clPositions.filter((p: any) => p.isStaked && p.estimatedAPR);
-              if (stakedPositions.length === 0) {
-                return (
-                  <div style={{ 
-                    padding: 16, 
-                    background: theme.bgCard, 
-                    borderRadius: 12, 
-                    border: `2px solid ${theme.border}`,
-                    boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.05)'
-                  }}>
-                    <div style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
-                      Average APR
-                    </div>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: theme.textSecondary, marginBottom: 4 }}>
-                      0%
-                    </div>
-                    <div style={{ fontSize: 13, color: theme.textSecondary }}>
-                      No staked positions
-                    </div>
-                  </div>
-                );
-              }
-              
-              // Calculate weighted average APR
-              let totalValueWeighted = 0;
-              let totalValue = 0;
-              stakedPositions.forEach((p: any) => {
-                const value = parseFloat(p.estimatedValueUSD || '0');
-                const aprStr = p.estimatedAPR || '0%';
-                const apr = parseFloat(aprStr.replace('%', ''));
-                totalValueWeighted += value * apr;
-                totalValue += value;
-              });
-              const avgAPR = totalValue > 0 ? totalValueWeighted / totalValue : 0;
-              
-              return (
-                <div style={{ 
-                  padding: 16, 
-                  background: theme.bgCard, 
-                  borderRadius: 12, 
-                  border: `2px solid ${theme.border}`,
-                  boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.05)'
-                }}>
-                  <div style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
-                    Average APR
-                  </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: theme.primary, marginBottom: 4 }}>
-                    {avgAPR.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}%
-                  </div>
-                  <div style={{ fontSize: 13, color: theme.textSecondary }}>
-                    weighted by position size
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
+      <PortfolioOverview positions={clPositions} theme={theme} darkMode={darkMode} />
 
       <div style={{ display: "grid", gap: 12 }}>
         {loading && (
@@ -981,36 +404,10 @@ function LpCheckerPageContent() {
             {/* Sorted and filtered positions */}
             {(() => {
               // Show all active positions (inactive ones are handled by isActive flag)
-              let filtered = clPositions.filter((p) => p.isActive);
+              const filtered = clPositions.filter((p) => p.isActive);
               
-              // Sort positions
-              const sorted = [...filtered].sort((a: any, b: any) => {
-                let aVal, bVal;
-                switch (sortBy) {
-                  case 'value':
-                    aVal = parseFloat(a.estimatedValueUSD || '0');
-                    bVal = parseFloat(b.estimatedValueUSD || '0');
-                    break;
-                  case 'apr':
-                    aVal = parseFloat((a.estimatedAPR || '0%').replace('%', ''));
-                    bVal = parseFloat((b.estimatedAPR || '0%').replace('%', ''));
-                    break;
-                  case 'daily':
-                    aVal = a.rewardPerYearUSD ? parseFloat(a.rewardPerYearUSD) / 365.25 : 0;
-                    bVal = b.rewardPerYearUSD ? parseFloat(b.rewardPerYearUSD) / 365.25 : 0;
-                    break;
-                  case 'pair':
-                    aVal = a.pairSymbol || '';
-                    bVal = b.pairSymbol || '';
-                    if (typeof aVal === 'string') {
-                      return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-                    }
-                    break;
-                  default:
-                    return 0;
-                }
-                return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
-              });
+              // Sort positions using utility function
+              const sorted = sortPositions(filtered, sortBy, sortOrder);
               
               const toggleExpand = (tokenId: string) => {
                 const newExpanded = new Set(expandedPositions);

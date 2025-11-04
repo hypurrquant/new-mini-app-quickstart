@@ -1,0 +1,97 @@
+import { Address } from "viem";
+
+export type LpResult = {
+  pairAddress: Address;
+  pairSymbol: string;
+  lpBalanceFormatted: string;
+  lpBalanceRaw: bigint;
+  sharePercent: string;
+  token0: { address: Address; symbol: string; amountFormatted: string };
+  token1: { address: Address; symbol: string; amountFormatted: string };
+  tvlUsd?: string;
+  positionUsd?: string;
+  aprPercent?: string;
+};
+
+export type CLPosition = {
+  tokenId: string;
+  token0: Address;
+  token1: Address;
+  token0Symbol?: string;
+  token1Symbol?: string;
+  pairSymbol?: string;
+  token0Decimals?: number;
+  token1Decimals?: number;
+  tickSpacing: number;
+  tickLower: number;
+  tickUpper: number;
+  liquidity: string;
+  liquidityRaw?: string;
+  isActive?: boolean;
+  isStaked?: boolean;
+  pool: Address | null;
+  slot0?: { sqrtPriceX96: string; tick: number };
+  poolLiquidity?: string;
+  price1Per0?: number;
+  price0Per1?: number;
+  priceRange1Per0Min?: number;
+  priceRange1Per0Max?: number;
+  priceRange0Per1Min?: number;
+  priceRange0Per1Max?: number;
+  estimatedValueUSD?: string;
+  estimatedAPR?: string;
+  earnedAmountUSD?: string;
+  earnedAmount?: string;
+  earnedSymbol?: string;
+  rewardRate?: string;
+  rewardPerYearUSD?: string;
+  rewardPerDay?: string;
+  rewardPerWeek?: string;
+  estimatedAmount0?: number;
+  estimatedAmount1?: number;
+  token0PriceUSD?: string;
+  token1PriceUSD?: string;
+  poolTVL?: string;
+  poolVolume24h?: string;
+  poolVolume7d?: string;
+  poolFees24h?: string;
+  poolFees7d?: string;
+  poolFeeAPR?: string;
+  poolRewardRate?: string;
+  poolRewardSymbol?: string;
+  poolRewardPriceUSD?: string;
+  myLiquidityProportion?: string;
+  positionAge?: number;
+  collectedFeesUSD?: string;
+  collectedFees0?: string;
+  collectedFees0Symbol?: string;
+  collectedFees1?: string;
+  collectedFees1Symbol?: string;
+  roi?: string;
+  unclaimedFeesUSD?: string;
+  unclaimedFees0?: string;
+  unclaimedFees1?: string;
+  calculatedBy?: string;
+};
+
+export type SortBy = 'value' | 'apr' | 'daily' | 'pair';
+export type SortOrder = 'asc' | 'desc';
+
+export type Theme = {
+  bg: string;
+  bgSecondary: string;
+  bgCard: string;
+  border: string;
+  text: string;
+  textSecondary: string;
+  success: string;
+  successBg: string;
+  successBorder: string;
+  warning: string;
+  warningBg: string;
+  primary: string;
+  skeleton: string;
+  infoBg: string;
+  infoBorder: string;
+};
+
