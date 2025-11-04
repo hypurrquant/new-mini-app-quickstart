@@ -1,0 +1,37 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjQzMTcyMCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEVEODI2Mjk1MTllRGIzQTM4NWZBNTg2ODNkZEFCMmFlMThBNENhNTkifQ",
+    "payload": "eyJkb21haW4iOiJscGluZy52ZXJjZWwuYXBwIn0",
+    "signature": "38beppG/dWLJhgU2h+LJpNO2N6ezWh93lLd7euatzxd9tlq6m4HUgla5deWxFEQo9vwv5g0H07IkQnZWaKBFPhs="
+  },
+  "baseBuilder": {
+    "ownerAddress": ""
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "LPing",
+    "homeUrl": "https://lping.vercel.app",
+    "iconUrl": "https://lping.vercel.app/blue-icon.png",
+    "splashImageUrl": "https://lping.vercel.app/blue-hero.png",
+    "splashBackgroundColor": "#000000",
+    "webhookUrl": "https://lping.vercel.app/api/webhook",
+    "subtitle": "Your Personal LP Assistant",
+    "description": "Real-time monitoring of your Aerodrome Concentrated Liquidity positions. Track rewards, analyze performance, and never miss an opportunity.",
+    "screenshotUrls": [
+      "https://lping.vercel.app/screenshot-portrait.png"
+    ],
+    "primaryCategory": "finance",
+    "tags": [
+      "defi",
+      "lp",
+      "aerodrome",
+      "liquidity",
+      "crypto"
+    ],
+    "heroImageUrl": "https://lping.vercel.app/blue-hero.png",
+    "tagline": "LP Journey Together",
+    "ogTitle": "LPing - LP Position Tracker",
+    "ogDescription": "Real-time monitoring of your Aerodrome Concentrated Liquidity positions",
+    "ogImageUrl": "https://lping.vercel.app/blue-hero.png"
+  }
+}

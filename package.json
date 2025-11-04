@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/prebuild-pool-cache.js",
+    "prebuild": "node scripts/prebuild-pool-cache.js && node scripts/generate-manifest.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build-pool-cache": "tsx scripts/build-pool-cache.ts"
+    "build-pool-cache": "tsx scripts/build-pool-cache.ts",
+    "generate-manifest": "node scripts/generate-manifest.js"
   },
   "dependencies": {
     "@coinbase/onchainkit": "latest",

@@ -31,7 +31,7 @@ export const minikitConfig = {
     splashBackgroundColor: "#000000",
     homeUrl: ROOT_URL,
     webhookUrl: `${ROOT_URL}/api/webhook`,
-    primaryCategory: "social",
+    primaryCategory: "finance",
     tags: ["defi", "lp", "aerodrome", "liquidity", "crypto"],
     heroImageUrl: `${ROOT_URL}/blue-hero.png`, 
     tagline: "LP Journey Together",

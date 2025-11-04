@@ -31,16 +31,18 @@ export async function generateMetadata(): Promise<Metadata> {
       }),
       // MiniApp embed metadata for Base App
       // Required for rich embeds when app is shared
-      // @see https://docs.base.org/mini-apps/quickstart/migrate-existing-apps
+      // @see https://docs.base.org/mini-apps/core-concepts/embeds-and-previews
       "fc:miniapp": JSON.stringify({
         version: "next",
         imageUrl: minikitConfig.miniapp.heroImageUrl,
         button: {
-          title: "Track LP Positions",
+          title: "Open LPing",
           action: {
-            type: "launch_miniapp",
-            name: minikitConfig.miniapp.name,
+            type: "launch_frame",
             url: ROOT_URL,
+            name: minikitConfig.miniapp.name,
+            splashImageUrl: minikitConfig.miniapp.splashImageUrl,
+            splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
           },
         },
       }),
