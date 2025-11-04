@@ -23,7 +23,7 @@ export const minikitConfig = {
   miniapp: {
     version: "1",
     name: "LPing", 
-    subtitle: "Track Your LP Positions Like a Pro", 
+    subtitle: "Your Personal LP Assistant", 
     description: "Real-time monitoring of your Aerodrome Concentrated Liquidity positions. Track rewards, analyze performance, and never miss an opportunity.",
     screenshotUrls: [`${ROOT_URL}/screenshot-portrait.png`],
     iconUrl: `${ROOT_URL}/blue-icon.png`,
@@ -34,7 +34,7 @@ export const minikitConfig = {
     primaryCategory: "social",
     tags: ["defi", "lp", "aerodrome", "liquidity", "crypto"],
     heroImageUrl: `${ROOT_URL}/blue-hero.png`, 
-    tagline: "Track Your LP Positions Like a Pro",
+    tagline: "LP Journey Together",
     ogTitle: "LPing - LP Position Tracker",
     ogDescription: "Real-time monitoring of your Aerodrome Concentrated Liquidity positions",
     ogImageUrl: `${ROOT_URL}/blue-hero.png`,
