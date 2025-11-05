@@ -12,7 +12,7 @@
     "name": "LPing",
     "homeUrl": "https://lping.vercel.app",
     "iconUrl": "https://lping.vercel.app/logo.png",
-    "splashImageUrl": "https://lping.vercel.app/logo_.png",
+    "splashImageUrl": "https://lping.vercel.app/blue-hero.png",
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://lping.vercel.app/api/webhook",
     "subtitle": "Your Personal LP Assistant",

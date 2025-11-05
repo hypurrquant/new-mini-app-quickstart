@@ -12,14 +12,19 @@ interface HeaderProps {
   setDarkMode: (value: boolean) => void;
   onShowGuide: () => void;
   onShowRewards: () => void;
+  viewAddress?: string;
+  ownerAddress?: string;
 }
 
-export default function Header({ theme, darkMode, setDarkMode, onShowGuide, onShowRewards }: HeaderProps) {
+export default function Header({ theme, darkMode, setDarkMode, onShowGuide, onShowRewards, viewAddress, ownerAddress }: HeaderProps) {
   const { address: connectedAddress } = useAccount();
   const walletMenuRef = useRef<HTMLDivElement>(null);
   const settingsMenuRef = useRef<HTMLDivElement>(null);
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  
+  // Use viewAddress if provided, otherwise use connectedAddress
+  const displayAddress = viewAddress || connectedAddress;
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -80,12 +85,13 @@ export default function Header({ theme, darkMode, setDarkMode, onShowGuide, onSh
         
         {/* Wallet Button with Dropdown */}
         <div style={{ position: 'relative' }} ref={walletMenuRef}>
-          {connectedAddress ? (
+          {displayAddress ? (
             <WalletMenu
-              address={connectedAddress}
+              address={displayAddress}
               theme={theme}
               showMenu={showWalletMenu}
               onToggleMenu={() => setShowWalletMenu(!showWalletMenu)}
+              isViewing={!!viewAddress}
             />
           ) : (
             <ConnectWallet />

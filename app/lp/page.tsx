@@ -74,6 +74,35 @@ function LpCheckerPageContent() {
   
   // Use positions hook
   const { clPositions, clLoading, clError, refresh } = usePositions(ownerAddress, isConnected);
+  
+  // Debug: Log positions count
+  useEffect(() => {
+    console.log('[LpCheckerPage] clPositions count:', clPositions.length, 'clLoading:', clLoading, 'clError:', clError);
+    if (clPositions.length > 0) {
+      console.log('[LpCheckerPage] First position:', clPositions[0]);
+      const stakedCount = clPositions.filter((p: any) => p.isStaked).length;
+      const activeCount = clPositions.filter((p: any) => p.isActive).length;
+      const stakedActiveCount = clPositions.filter((p: any) => p.isStaked && p.isActive).length;
+      const liquidityCount = clPositions.filter((p: any) => {
+        const liquidityStr = p.liquidity || p.liquidityRaw || '0';
+        return BigInt(liquidityStr) > 0n;
+      }).length;
+      const breakdown = {
+        total: clPositions.length,
+        staked: stakedCount,
+        active: activeCount,
+        stakedAndActive: stakedActiveCount,
+        withLiquidity: liquidityCount,
+        stakedPositions: clPositions.filter((p: any) => p.isStaked).map((p: any) => ({
+          tokenId: p.tokenId,
+          liquidity: p.liquidity,
+          isActive: p.isActive,
+          pairSymbol: p.pairSymbol
+        }))
+      };
+      console.log('[LpCheckerPage] Positions breakdown:', JSON.stringify(breakdown, null, 2));
+    }
+  }, [clPositions, clLoading, clError]);
 
   const resolveLpAddresses = (): Address[] => {
     if (lpQueryFromUrl.length > 0) return lpQueryFromUrl;
@@ -162,6 +191,8 @@ function LpCheckerPageContent() {
         setDarkMode={setDarkMode}
         onShowGuide={() => setShowGuide(true)}
         onShowRewards={() => setShowRewards(true)}
+        viewAddress={viewAddress}
+        ownerAddress={ownerAddress}
       />
 
 
@@ -451,8 +482,31 @@ function LpCheckerPageContent() {
                   
                   {/* Table Body - shown when positions exist */}
                   {clPositions.length > 0 && (() => {
-                    // Show all active positions (inactive ones are handled by isActive flag)
-                    const filtered = clPositions.filter((p) => p.isActive);
+                    // Filter out positions with zero liquidity
+                    const filtered = clPositions.filter((p: any) => {
+                      const liquidityStr = p.liquidity || p.liquidityRaw || '0';
+                      const liquidity = BigInt(liquidityStr);
+                      return liquidity > 0n;
+                    });
+                    
+                    // Show empty state if all positions have zero liquidity
+                    if (filtered.length === 0) {
+                      return (
+                        <div style={{ 
+                          padding: 32, 
+                          textAlign: 'center',
+                          background: theme.bgCard,
+                        }}>
+                          <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+                          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+                            No active CL positions found
+                          </div>
+                          <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 24 }}>
+                            All positions have zero liquidity
+                          </div>
+                        </div>
+                      );
+                    }
                     
                     // Sort positions using utility function
                     const sorted = sortPositions(filtered, sortBy, sortOrder);
@@ -510,6 +564,34 @@ function LpCheckerPageContent() {
                         }}>
                           CL{p.tickSpacing}
                         </span>
+                        {!p.isActive && (
+                          <span style={{ 
+                            marginLeft: 6, 
+                            padding: '2px 6px', 
+                            background: '#fff3cd', 
+                            border: '1px solid #ffc107', 
+                            borderRadius: 4, 
+                            fontSize: 10, 
+                            fontWeight: 600,
+                            color: '#856404'
+                          }}>
+                            Closed
+                          </span>
+                        )}
+                        {p.isStaked && (
+                          <span style={{ 
+                            marginLeft: 6, 
+                            padding: '2px 6px', 
+                            background: '#d4edda', 
+                            border: '1px solid #28a745', 
+                            borderRadius: 4, 
+                            fontSize: 10, 
+                            fontWeight: 600,
+                            color: '#155724'
+                          }}>
+                            Staked
+                          </span>
+                        )}
                         <div style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>#{p.tokenId}</div>
                       </div>
                       <div style={{ textAlign: 'right', fontSize: 14, fontWeight: 600 }}>

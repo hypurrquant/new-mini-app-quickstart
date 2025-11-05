@@ -41,8 +41,10 @@ export default function Home() {
       background: theme.bg, 
       color: theme.text,
       transition: 'all 0.3s ease',
-      overflow: 'hidden',
+      overflowX: 'hidden',
+      overflowY: 'auto',
       position: 'relative',
+      WebkitOverflowScrolling: 'touch', // iOS smooth scrolling
     }}>
       {/* Animated Background */}
       <div style={{

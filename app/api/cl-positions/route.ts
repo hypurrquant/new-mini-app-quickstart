@@ -276,15 +276,22 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const owner = searchParams.get("owner");
   const debugFlag = searchParams.get("debug");
-  const debug: any = { owner, steps: [] };
+  const debug: any = { owner, steps: [], timestamp: new Date().toISOString() };
+  
+  console.log('[cl-positions] Request received:', { owner, debugFlag, url: request.url });
+  
   if (!owner || !isAddress(owner)) {
-    return NextResponse.json({ error: "Invalid owner" }, { status: 400 });
+    debug.steps.push({ step: "validation.error", error: "Invalid owner address" });
+    return NextResponse.json({ error: "Invalid owner", debug }, { status: 400 });
   }
 
   try {
+    debug.steps.push({ step: "start", owner });
+    
     // 1) Get NFTs directly held in wallet
     let walletTokenIds: bigint[] = [];
     try {
+      debug.steps.push({ step: "wallet.balanceOf.start" });
       const balance = await publicClient.readContract({
         address: AERODROME_NPM,
         abi: NPM_ABI,
@@ -293,6 +300,7 @@ export async function GET(request: Request) {
       });
       const count = Number(balance as bigint);
       debug.steps.push({ step: "wallet.balanceOf", count });
+      
       if (count > 0) {
         const indexCalls = Array.from({ length: count }, (_, i) => ({
           address: AERODROME_NPM as Address,
@@ -300,14 +308,21 @@ export async function GET(request: Request) {
           functionName: "tokenOfOwnerByIndex" as const,
           args: [owner as Address, BigInt(i)],
         }));
+        debug.steps.push({ step: "wallet.tokenOfOwnerByIndex.start", calls: indexCalls.length });
         const idxResults = await publicClient.multicall({ contracts: indexCalls, allowFailure: true });
         walletTokenIds = idxResults
           .filter((r) => r.status === "success")
           .map((r) => r.result as bigint);
-        debug.steps.push({ step: "wallet.tokenIds", count: walletTokenIds.length, tokenIds: debugFlag ? walletTokenIds.map(String) : undefined });
+        debug.steps.push({ 
+          step: "wallet.tokenIds", 
+          count: walletTokenIds.length, 
+          tokenIds: debugFlag ? walletTokenIds.map(String) : undefined 
+        });
       }
     } catch (e) {
-      debug.steps.push({ step: "wallet.error", error: String(e) });
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      debug.steps.push({ step: "wallet.error", error: errorMsg, stack: e instanceof Error ? e.stack : undefined });
+      console.error('[cl-positions] Wallet NFT fetch error:', e);
     }
 
     // 2) Get staked NFTs from gauges (whitelist pools + cache)
@@ -323,23 +338,47 @@ export async function GET(request: Request) {
       // Try loading dynamic cache
       try {
         let cache = null;
+        
+        // Try reading from file system first (server-side)
         if (typeof window === 'undefined') {
           try {
             const fs = await import('fs');
             const path = await import('path');
             const cachePath = path.join(process.cwd(), 'public', 'pool-cache.json');
+            debug.steps.push({ step: "cache.file.read.start", path: cachePath });
+            
             if (fs.existsSync(cachePath)) {
               const cacheData = fs.readFileSync(cachePath, 'utf-8');
               cache = JSON.parse(cacheData);
+              debug.steps.push({ step: "cache.file.read.success", pools: cache?.pools?.length || 0 });
+            } else {
+              debug.steps.push({ step: "cache.file.notFound", path: cachePath });
             }
-          } catch {}
+          } catch (fsError) {
+            const errorMsg = fsError instanceof Error ? fsError.message : String(fsError);
+            debug.steps.push({ step: "cache.file.error", error: errorMsg });
+            console.warn('[cl-positions] Failed to read cache file:', fsError);
+          }
         }
         
+        // Fallback to HTTP fetch (works in both server and client)
         if (!cache) {
-          const cacheUrl = `${process.env.NEXT_PUBLIC_ROOT_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/pool-cache.json`;
-          const cacheRes = await fetch(cacheUrl, { cache: 'no-store' });
-          if (cacheRes.ok) {
-            cache = await cacheRes.json();
+          try {
+            const cacheUrl = `${process.env.NEXT_PUBLIC_ROOT_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/pool-cache.json`;
+            debug.steps.push({ step: "cache.http.fetch.start", url: cacheUrl });
+            
+            const cacheRes = await fetch(cacheUrl, { cache: 'no-store' });
+            
+            if (cacheRes.ok) {
+              cache = await cacheRes.json();
+              debug.steps.push({ step: "cache.http.fetch.success", pools: cache?.pools?.length || 0 });
+            } else {
+              debug.steps.push({ step: "cache.http.fetch.failed", status: cacheRes.status });
+            }
+          } catch (fetchError) {
+            const errorMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+            debug.steps.push({ step: "cache.http.error", error: errorMsg });
+            console.warn('[cl-positions] Failed to fetch cache:', fetchError);
           }
         }
 
@@ -349,7 +388,11 @@ export async function GET(request: Request) {
             poolKeys.push({ token0: cp.token0 as Address, token1: cp.token1 as Address, tickSpacing: cp.tickSpacing });
           }
         }
-      } catch {}
+      } catch (cacheError) {
+        const errorMsg = cacheError instanceof Error ? cacheError.message : String(cacheError);
+        debug.steps.push({ step: "cache.outer.error", error: errorMsg });
+        console.warn('[cl-positions] Cache loading failed, continuing without cache:', cacheError);
+      }
 
       // Deduplicate
       const uniqueKeys = Array.from(
@@ -424,10 +467,21 @@ export async function GET(request: Request) {
     }
 
     // 3) Merge wallet + staked NFTs
+    // IMPORTANT: We query BOTH wallet-held NFTs AND staked NFTs
+    // - walletTokenIds: NFTs directly held in wallet (regardless of staking status)
+    // - stakedTokenIds: NFTs staked in gauges (may overlap with walletTokenIds)
+    // - allTokenIds: Combined and deduplicated list of all NFTs to query
+    // This ensures we find ALL positions, whether staked or not, as long as they belong to the owner
     const allTokenIds = Array.from(new Set([...walletTokenIds, ...stakedTokenIds]));
     const stakedSet = new Set(stakedTokenIds.map(id => id.toString()));
     
-    debug.steps.push({ step: "total.tokenIds", wallet: walletTokenIds.length, staked: stakedTokenIds.length, total: allTokenIds.length });
+    debug.steps.push({ 
+      step: "total.tokenIds", 
+      wallet: walletTokenIds.length, 
+      staked: stakedTokenIds.length, 
+      total: allTokenIds.length,
+      note: "walletTokenIds includes all NFTs held in wallet (staked or not)"
+    });
     if (allTokenIds.length === 0) {
       return NextResponse.json({ positions: [], debug });
     }
@@ -471,6 +525,10 @@ export async function GET(request: Request) {
       const [_nonce, _operator, token0, token1, tickSpacing, tickLower, tickUpper, liquidity] = r.result;
       const liquidityBig = liquidity;
       const isStaked = stakedSet.has(allTokenIds[i].toString());
+      // IMPORTANT: isActive = liquidity > 0 (regardless of staking status)
+      // Staking alone does NOT make a position active
+      // A position must have liquidity > 0 to be considered active
+      const isActive = liquidityBig > 0n;
       positions.push({
         tokenId: allTokenIds[i].toString(),
         token0: token0 as Address,
@@ -480,7 +538,7 @@ export async function GET(request: Request) {
         tickUpper: Number(tickUpper),
         liquidity: liquidityBig.toString(),
         liquidityRaw: liquidityBig.toString(),
-        isActive: liquidityBig > 0n || isStaked,
+        isActive,
         isStaked,
         pool: null,
       });
@@ -655,6 +713,11 @@ export async function GET(request: Request) {
         const max0Per1 = max1Per0 !== 0 ? 1 / min1Per0 : undefined;
         (p as any).priceRange0Per1Min = min0Per1 ? Number(min0Per1.toFixed(8)) : undefined;
         (p as any).priceRange0Per1Max = max0Per1 ? Number(max0Per1.toFixed(8)) : undefined;
+        
+        // Check if position is "In Range" (current price is within user's range)
+        // For CL positions: In Range = tickLower <= currentTick <= tickUpper
+        const isInRange = tick >= p.tickLower && tick <= p.tickUpper;
+        (p as any).isInRange = isInRange;
 
         // Only calculate token amounts if SugarHelper didn't provide them
         if (!p.calculatedBy) {
@@ -722,7 +785,9 @@ export async function GET(request: Request) {
     }
 
     // Fetch Gauge reward info for staked positions
-    const stakedPositions = (positions as any[]).filter((p) => p.isStaked && p.pool);
+    // IMPORTANT: Only calculate APR for positions that are BOTH staked AND active (liquidity > 0)
+    // Staking alone does NOT earn rewards - position must have liquidity > 0
+    const stakedPositions = (positions as any[]).filter((p) => p.isStaked && p.isActive && p.pool);
     if (stakedPositions.length > 0) {
       // Get gauge addresses for staked positions' pools
       const stakedPools = Array.from(new Set(stakedPositions.map((p) => p.pool))) as Address[];
@@ -868,30 +933,61 @@ export async function GET(request: Request) {
 
           // Get actual earned rewards
           const earnedRes = earnedResults[idx];
+          const rewardPriceUSD = rewardTokenPricesUSD.get(rewardTokenAddr.toLowerCase()) || 0;
+          
+          if (debugFlag && idx < 2) {
+            console.log(`[cl-positions] Debug earned for position ${p.tokenId}:`, {
+              status: earnedRes.status,
+              result: earnedRes.result?.toString(),
+              rewardTokenAddr: rewardTokenAddr.toLowerCase(),
+              rewardPriceUSD,
+              rewardDecimals,
+            });
+          }
+          
           if (earnedRes.status === "success" && earnedRes.result) {
             const earnedAmount = Number(earnedRes.result as bigint) / Math.pow(10, rewardDecimals);
             (p as any).earnedAmount = earnedAmount.toFixed(6);
             (p as any).earnedSymbol = rewardSymbol;
+            
+            // Calculate USD value of earned rewards (always calculate if we have earnedAmount and price)
+            if (earnedAmount > 0 && rewardPriceUSD > 0) {
+              (p as any).earnedAmountUSD = (earnedAmount * rewardPriceUSD).toFixed(2);
+            } else if (earnedAmount > 0) {
+              // If we have earned amount but no price, set to 0
+              (p as any).earnedAmountUSD = "0.00";
+            } else {
+              // If earned amount is 0, set to 0
+              (p as any).earnedAmountUSD = "0.00";
+            }
+          } else {
+            // If earnedRes failed or result is 0/null, set to 0
+            (p as any).earnedAmount = "0";
+            (p as any).earnedAmountUSD = "0.00";
+            (p as any).earnedSymbol = rewardSymbol;
           }
 
           // Calculate APR using USD prices
-          const rewardPriceUSD = rewardTokenPricesUSD.get(rewardTokenAddr.toLowerCase()) || 0;
           const positionValueUSD = parseFloat(p.estimatedValueUSD || "0");
           
           (p as any).poolRewardPriceUSD = rewardPriceUSD.toFixed(4);
           
           if (rewardPriceUSD > 0 && positionValueUSD > 0) {
             // APR based on MY rewards, not pool rewards
+            // IMPORTANT: This APR represents STAKING REWARDS from gauge, NOT trading fees
+            // 
+            // Key points:
+            // 1. Position must be BOTH staked AND active (liquidity > 0) to earn staking rewards
+            //    - Staking alone is NOT enough - position must have liquidity > 0
+            // 2. Staking rewards are paid regardless of whether position is "In Range" or "Out of Range"
+            //    - "In Range" = currentTick is within [tickLower, tickUpper] (earns trading fees)
+            //    - "Out of Range" = currentTick is outside [tickLower, tickUpper] (no trading fees)
+            // 3. Trading fees are only earned when position is "In Range"
             const myRewardValuePerYearUSD = myRewardPerYear * rewardPriceUSD;
             const apr = (myRewardValuePerYearUSD / positionValueUSD) * 100;
             (p as any).estimatedAPR = apr > 0 ? apr.toFixed(2) + "%" : undefined;
+            (p as any).estimatedAPRType = "staking"; // Mark this as staking APR, not trading fee APR
             (p as any).rewardPerYearUSD = myRewardValuePerYearUSD.toFixed(2);
-            
-            // Calculate USD value of earned rewards
-            const earnedAmount = parseFloat((p as any).earnedAmount || "0");
-            if (earnedAmount > 0) {
-              (p as any).earnedAmountUSD = (earnedAmount * rewardPriceUSD).toFixed(2);
-            }
           }
         }
 
@@ -960,7 +1056,14 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ positions, debug: debugFlag ? debug : undefined });
   } catch (e) {
-    return NextResponse.json({ error: "Failed", debug }, { status: 500 });
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    const errorStack = e instanceof Error ? e.stack : undefined;
+    debug.steps.push({ step: "global.error", error: errorMsg, stack: errorStack });
+    console.error('[cl-positions] Global error:', e);
+    return NextResponse.json({ 
+      error: errorMsg || "Failed", 
+      debug: debugFlag ? debug : undefined 
+    }, { status: 500 });
   }
 }
 

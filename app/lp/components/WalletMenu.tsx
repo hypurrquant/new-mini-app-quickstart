@@ -7,9 +7,10 @@ interface WalletMenuProps {
   theme: Theme;
   showMenu: boolean;
   onToggleMenu: () => void;
+  isViewing?: boolean;
 }
 
-export default function WalletMenu({ address, theme, showMenu, onToggleMenu }: WalletMenuProps) {
+export default function WalletMenu({ address, theme, showMenu, onToggleMenu, isViewing }: WalletMenuProps) {
   const { disconnect } = useDisconnect();
   const [copied, setCopied] = useState(false);
 
@@ -17,6 +18,16 @@ export default function WalletMenu({ address, theme, showMenu, onToggleMenu }: W
     navigator.clipboard.writeText(address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+  
+  const handleDisconnect = () => {
+    if (isViewing) {
+      // If viewing someone else's address, just navigate back to /lp
+      window.location.href = '/lp';
+    } else {
+      disconnect();
+    }
+    onToggleMenu();
   };
 
   return (
@@ -63,7 +74,9 @@ export default function WalletMenu({ address, theme, showMenu, onToggleMenu }: W
             gap: 8,
           }}>
             <div>
-              <div style={{ fontSize: 11, color: theme.textSecondary, marginBottom: 4 }}>Connected Wallet</div>
+              <div style={{ fontSize: 11, color: theme.textSecondary, marginBottom: 4 }}>
+                {isViewing ? 'Viewing Address' : 'Connected Wallet'}
+              </div>
               <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace' }}>
                 {address.slice(0, 6)}...{address.slice(-4)}
               </div>
@@ -86,10 +99,7 @@ export default function WalletMenu({ address, theme, showMenu, onToggleMenu }: W
           </div>
           
           <button
-            onClick={() => {
-              disconnect();
-              onToggleMenu();
-            }}
+            onClick={handleDisconnect}
             style={{
               width: '100%',
               padding: '12px 16px',
@@ -107,7 +117,7 @@ export default function WalletMenu({ address, theme, showMenu, onToggleMenu }: W
             onMouseEnter={(e) => e.currentTarget.style.background = theme.warningBg}
             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
-            🚪 Disconnect
+            {isViewing ? '🔙 Back to My Positions' : '🚪 Disconnect'}
           </button>
         </div>
       )}
