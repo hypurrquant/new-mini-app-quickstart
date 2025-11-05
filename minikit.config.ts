@@ -18,7 +18,7 @@ export const minikitConfig = {
       `https://lping.vercel.app/screenshot-3.png`,
     ],
     iconUrl: `https://lping.vercel.app/logo.png`,
-    splashImageUrl: `https://lping.vercel.app/logo_.png`,
+    splashImageUrl: `https://lping.vercel.app/logo.png`,
     splashBackgroundColor: "#000000",
     homeUrl: "https://lping.vercel.app/",
     webhookUrl: "https://lping.vercel.app/api/webhook",
