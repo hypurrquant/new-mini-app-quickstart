@@ -14,37 +14,32 @@
   html {
     max-width: 100vw;
     overflow-x: hidden;
-    overflow-y: auto;
+    /* Don't set overflow-y on html - let body handle scrolling */
     height: 100%;
     -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
-    /* Ensure scrolling works in Base App mini app context */
-    position: relative;
   }
 
   body {
     max-width: 100vw;
     overflow-x: hidden;
-    overflow-y: auto;
-    min-height: 100%;
-    height: auto; /* Allow body to grow beyond viewport */
+    overflow-y: auto; /* Enable vertical scrolling */
+    min-height: 100vh; /* Minimum viewport height */
     color: var(--foreground);
     background: var(--background);
     font-family: var(--font-inter), sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
-    touch-action: pan-y; /* Enable vertical scrolling on touch devices */
-    /* Ensure scrolling works in Base App mini app context */
-    position: relative;
+    /* Don't set touch-action on body - let Base App handle it natively */
     overscroll-behavior-y: auto; /* Allow native scroll bounce */
   }
   
   /* Base App mini app specific fixes */
   #__next,
   [data-nextjs-scroll-focus-boundary] {
-    min-height: 100%;
+    min-height: 100vh;
     height: auto;
-    touch-action: pan-y; /* Enable touch scrolling */
+    /* Don't set touch-action - let Base App handle it */
   }
   
   /* Ensure interactive elements don't interfere with scrolling */
@@ -55,7 +50,7 @@
   select,
   [role="button"],
   [onclick] {
-    touch-action: manipulation; /* Allow tap and double-tap zoom, but still allow scrolling */
+    touch-action: manipulation; /* Allow tap without double-tap zoom delay */
   }
 
   code {
@@ -78,7 +73,7 @@
     box-sizing: border-box;
     padding: 0;
     margin: 0;
-    touch-action: pan-y; /* Enable touch scrolling for all elements */
+    /* Don't set touch-action globally - let Base App handle scrolling natively */
   }
 
   a {

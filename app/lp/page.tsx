@@ -177,9 +177,7 @@ function LpCheckerPageContent() {
         position: 'relative', 
         width: '100%', 
         boxSizing: 'border-box',
-        touchAction: 'pan-y', // Critical: allow vertical scrolling
-        WebkitOverflowScrolling: 'touch', // iOS smooth scrolling
-        overflowY: 'auto', // Enable scrolling
+        // Don't set overflow or touch-action - let body handle scrolling natively
       }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

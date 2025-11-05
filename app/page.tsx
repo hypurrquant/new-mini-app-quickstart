@@ -43,10 +43,7 @@ export default function Home() {
       transition: 'all 0.3s ease',
       position: 'relative',
       width: '100%',
-      overflowY: 'auto', // Ensure vertical scrolling works
-      WebkitOverflowScrolling: 'touch', // iOS smooth scrolling
-      touchAction: 'pan-y', // Enable touch scrolling - critical for Base App
-      overscrollBehavior: 'auto', // Allow native scroll bounce
+      // Don't set overflow or touch-action - let body handle scrolling natively
     }}>
       {/* Animated Background */}
       <div style={{
