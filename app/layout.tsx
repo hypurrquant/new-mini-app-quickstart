@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
         version: minikitConfig.miniapp.version,
         imageUrl: minikitConfig.miniapp.heroImageUrl,
         button: {
-          title: `Launch ${minikitConfig.miniapp.name}`,
+          title: `Enjoy the ${minikitConfig.miniapp.name}`,
           action: {
             name: minikitConfig.miniapp.name,
             type: "launch_frame",
@@ -39,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
         version: "next",
         imageUrl: minikitConfig.miniapp.heroImageUrl,
         button: {
-          title: "Open LPing",
+          title: "Launch LPing",
           action: {
             type: "launch_frame",
             url: ROOT_URL,
