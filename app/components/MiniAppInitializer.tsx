@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { sdk } from "@farcaster/miniapp-sdk";
 
 /**
@@ -11,12 +12,18 @@ import { sdk } from "@farcaster/miniapp-sdk";
  */
 export function MiniAppInitializer() {
   const [isReady, setIsReady] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     // Always try to call ready() - SDK will handle if not in mini app context
     const callReady = async () => {
       let attempts = 0;
       const maxAttempts = 5;
+      
+      // Determine if we need to disable native gestures
+      // Only disable for pages that use custom gestures (like pull-to-refresh)
+      // Landing page and other pages should allow native scrolling
+      const needsDisableGestures = pathname === '/lp'; // Only /lp page has pull-to-refresh
       
       while (attempts < maxAttempts) {
         try {
@@ -33,11 +40,12 @@ export function MiniAppInitializer() {
           }
           
           // Call ready() to hide the loading splash screen
-          // disableNativeGestures: true is required when using swipe/drag interactions
-          // to prevent conflicts with Base App's native gestures
-          await sdk.actions.ready({ disableNativeGestures: true });
+          // disableNativeGestures: true is only needed for pages with custom gestures
+          // (like pull-to-refresh). For normal scrolling pages, set to false to allow
+          // Base App's native scrolling to work properly.
+          await sdk.actions.ready({ disableNativeGestures: needsDisableGestures });
           setIsReady(true);
-          console.log("[MiniApp] ✅ SDK ready() called successfully");
+          console.log(`[MiniApp] ✅ SDK ready() called successfully (disableNativeGestures: ${needsDisableGestures})`);
           return;
         } catch (error: any) {
           // Check if error is because we're not in mini app context
@@ -66,7 +74,7 @@ export function MiniAppInitializer() {
     };
 
     callReady();
-  }, []);
+  }, [pathname]);
 
   return null;
 }
