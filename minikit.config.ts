@@ -28,7 +28,7 @@ export const minikitConfig = {
     tagline: "LP Journey Together",
     ogTitle: "LPing - LP Position Tracker",
     ogDescription: "Real-time monitoring of your Aerodrome Concentrated Liquidity positions",
-    ogImageUrl: `https://lping.vercel.app/logo.png`,
+    ogImageUrl: `https://lping.vercel.app/logo_.png`,
     // Set noindex to false for production to enable search indexing
     // Set to true only for development/staging environments
     noindex: false,

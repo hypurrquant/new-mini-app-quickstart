@@ -44,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
       // will default to manifest values if not specified (per Base docs)
       "fc:miniapp": JSON.stringify({
         version: "next",
-        imageUrl: minikitConfig.miniapp.heroImageUrl,
+        imageUrl: minikitConfig.miniapp.iconUrl,
         button: {
           title: "Launch LPing",
           action: {
