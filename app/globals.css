@@ -17,6 +17,8 @@
     overflow-y: auto;
     height: 100%;
     -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+    /* Ensure scrolling works in Base App mini app context */
+    position: relative;
   }
 
   body {
@@ -24,6 +26,7 @@
     overflow-x: hidden;
     overflow-y: auto;
     min-height: 100%;
+    height: auto; /* Allow body to grow beyond viewport */
     color: var(--foreground);
     background: var(--background);
     font-family: var(--font-inter), sans-serif;
@@ -31,6 +34,16 @@
     -moz-osx-font-smoothing: grayscale;
     -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
     touch-action: pan-y; /* Enable vertical scrolling on touch devices */
+    /* Ensure scrolling works in Base App mini app context */
+    position: relative;
+    overscroll-behavior-y: auto; /* Allow native scroll bounce */
+  }
+  
+  /* Base App mini app specific fixes */
+  #__next,
+  [data-nextjs-scroll-focus-boundary] {
+    min-height: 100%;
+    height: auto;
   }
 
   code {

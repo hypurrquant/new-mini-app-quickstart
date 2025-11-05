@@ -17,6 +17,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: minikitConfig.miniapp.name,
     description: minikitConfig.miniapp.description,
+    viewport: {
+      width: "device-width",
+      initialScale: 1,
+      maximumScale: 5,
+      userScalable: true,
+      viewportFit: "cover", // Important for Base App mini apps
+    },
     other: {
       "fc:frame": JSON.stringify({
         version: minikitConfig.miniapp.version,
