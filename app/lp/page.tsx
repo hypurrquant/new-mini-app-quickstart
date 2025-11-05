@@ -124,27 +124,39 @@ function LpCheckerPageContent() {
     refresh();
   }, [refresh]);
 
-  // Pull-to-refresh handlers
+  // Pull-to-refresh handlers - only activate when at top and scrolling down
+  // Must not interfere with normal scrolling
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.scrollY === 0) {
+    // Only track if we're at the very top of the page
+    if (window.scrollY === 0 && window.pageYOffset === 0) {
       touchStartY.current = e.touches[0].clientY;
+    } else {
+      touchStartY.current = 0;
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartY.current === 0 || window.scrollY > 0) return;
+    // Don't interfere with scrolling - only handle pull-to-refresh at top
+    if (touchStartY.current === 0 || window.scrollY > 0 || window.pageYOffset > 0) {
+      return; // Allow normal scrolling
+    }
     
     const touchY = e.touches[0].clientY;
     const distance = touchY - touchStartY.current;
     
+    // Only show pull indicator if pulling down (positive distance) and small distance
     if (distance > 0 && distance < 150) {
       setIsPulling(true);
       setPullDistance(distance);
+      // Don't prevent default - allow scrolling to work
+    } else {
+      setIsPulling(false);
+      setPullDistance(0);
     }
   };
 
   const handleTouchEnd = () => {
-    if (isPulling && pullDistance > 80) {
+    if (isPulling && pullDistance > 80 && window.scrollY === 0) {
       onRefresh(false);
     }
     setIsPulling(false);
@@ -154,7 +166,21 @@ function LpCheckerPageContent() {
 
   return (
     <div 
-      style={{ maxWidth: 840, margin: "0 auto", padding: 16, minHeight: '100vh', background: theme.bg, color: theme.text, transition: 'background 0.3s, color 0.3s', position: 'relative', width: '100%', boxSizing: 'border-box' }}
+      style={{ 
+        maxWidth: 840, 
+        margin: "0 auto", 
+        padding: 16, 
+        minHeight: '100vh', 
+        background: theme.bg, 
+        color: theme.text, 
+        transition: 'background 0.3s, color 0.3s', 
+        position: 'relative', 
+        width: '100%', 
+        boxSizing: 'border-box',
+        touchAction: 'pan-y', // Critical: allow vertical scrolling
+        WebkitOverflowScrolling: 'touch', // iOS smooth scrolling
+        overflowY: 'auto', // Enable scrolling
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

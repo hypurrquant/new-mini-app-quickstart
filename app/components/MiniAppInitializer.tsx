@@ -20,10 +20,10 @@ export function MiniAppInitializer() {
       let attempts = 0;
       const maxAttempts = 5;
       
-      // Determine if we need to disable native gestures
-      // Only disable for pages that use custom gestures (like pull-to-refresh)
-      // Landing page and other pages should allow native scrolling
-      const needsDisableGestures = pathname === '/lp'; // Only /lp page has pull-to-refresh
+      // Always allow native gestures for scrolling in Base App mini apps
+      // disableNativeGestures: false allows Base App's native touch scrolling
+      // We'll handle pull-to-refresh differently if needed
+      const needsDisableGestures = false; // Always false to enable native scrolling
       
       while (attempts < maxAttempts) {
         try {

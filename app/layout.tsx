@@ -316,7 +316,15 @@ export default function RootLayout({
               `,
             }}
           />
-          <SafeArea>{children}</SafeArea>
+          <div style={{ 
+            minHeight: '100vh', 
+            height: 'auto',
+            touchAction: 'pan-y',
+            WebkitOverflowScrolling: 'touch',
+            overflowY: 'auto',
+          }}>
+            <SafeArea>{children}</SafeArea>
+          </div>
         </body>
       </html>
     </RootProvider>
