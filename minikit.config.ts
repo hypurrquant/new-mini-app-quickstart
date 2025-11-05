@@ -31,7 +31,7 @@ export const minikitConfig = {
     ogImageUrl: `https://lping.vercel.app/logo_.png`,
     // Set noindex to false for production to enable search indexing
     // Set to true only for development/staging environments
-    noindex: process.env.NODE_ENV === 'production' ? false : true,
+    noindex: false,
   },      
 } as const;
 
