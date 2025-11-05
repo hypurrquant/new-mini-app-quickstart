@@ -125,7 +125,7 @@ function LpCheckerPageContent() {
 
   return (
     <div 
-      style={{ maxWidth: 840, margin: "0 auto", padding: 16, minHeight: '100vh', background: theme.bg, color: theme.text, transition: 'background 0.3s, color 0.3s', position: 'relative' }}
+      style={{ maxWidth: 840, margin: "0 auto", padding: 16, minHeight: '100vh', background: theme.bg, color: theme.text, transition: 'background 0.3s, color 0.3s', position: 'relative', width: '100%', boxSizing: 'border-box' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -267,12 +267,15 @@ function LpCheckerPageContent() {
       {!clLoading && (
         <div style={{ 
           marginTop: 16,
+          width: '100%',
+          overflowX: 'auto',
         }}>
           <div style={{ 
             border: `1px solid ${theme.border}`, 
             borderRadius: 12, 
             overflow: 'hidden',
             background: theme.bgCard,
+            minWidth: 'min(100%, 800px)',
           }}>
             {/* Table Header */}
             <div style={{ 
@@ -284,6 +287,7 @@ function LpCheckerPageContent() {
               fontSize: 13,
               color: theme.textSecondary,
               borderBottom: clPositions.length > 0 ? `1px solid ${theme.border}` : 'none',
+              minWidth: 800,
             }}>
               <div>Pair</div>
               <div style={{ textAlign: 'right' }}>Value (USD)</div>
@@ -483,6 +487,7 @@ function LpCheckerPageContent() {
                         background: isExpanded ? theme.bgSecondary : 'transparent',
                         transition: 'background 0.2s',
                         alignItems: 'center',
+                        minWidth: 800,
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.background = theme.bgSecondary}
                       onMouseLeave={(e) => e.currentTarget.style.background = isExpanded ? theme.bgSecondary : 'transparent'}

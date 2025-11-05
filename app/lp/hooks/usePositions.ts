@@ -11,19 +11,33 @@ export function usePositions(ownerAddress?: Address, isConnected = false) {
   const [clPositions, setClPositions] = useState<CLPosition[]>([]);
   const lastClFetchAtRef = useRef<number>(0);
   const nextAllowedCLAtRef = useRef<number>(0);
+  const lastSearchedAddressRef = useRef<string | null>(null);
   const autoRefreshInterval = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchPositions = useCallback(async (silent = false) => {
-    if (!ownerAddress || !isAddress(ownerAddress)) return;
+  const fetchPositions = useCallback(async (silent = false, force = false) => {
+    if (!ownerAddress || !isAddress(ownerAddress)) {
+      setClPositions([]);
+      setClLoading(false);
+      setClError(null);
+      return;
+    }
+
+    const addressKey = ownerAddress.toLowerCase();
+    
+    // Skip if already searched this address (unless forced)
+    if (!force && lastSearchedAddressRef.current === addressKey) {
+      return;
+    }
 
     const now = Date.now();
-    if (now - lastClFetchAtRef.current < AUTO_FETCH_COOLDOWN_MS) return;
+    if (!force && now - lastClFetchAtRef.current < AUTO_FETCH_COOLDOWN_MS) return;
     if (now < nextAllowedCLAtRef.current) return;
 
     lastClFetchAtRef.current = now;
+    lastSearchedAddressRef.current = addressKey;
     
     try {
-      if (!silent && clPositions.length === 0) {
+      if (!silent) {
         setClLoading(true);
       }
       setClError(null);
@@ -42,18 +56,34 @@ export function usePositions(ownerAddress?: Address, isConnected = false) {
       setClError(e instanceof Error ? e.message : String(e));
       nextAllowedCLAtRef.current = Date.now() + FAIL_BACKOFF_MS;
     } finally {
-      if (!silent && clPositions.length === 0) {
-        setClLoading(false);
-      }
+      setClLoading(false);
     }
-  }, [ownerAddress, clPositions.length]);
+  }, [ownerAddress]);
 
-  // Auto discover CL positions when connected
+  // Auto discover CL positions when connected or address changes
   useEffect(() => {
-    if (!ownerAddress) return;
-    if (clLoading || clPositions.length > 0) return;
-    fetchPositions();
-  }, [ownerAddress, clLoading, clPositions.length, fetchPositions]);
+    if (!ownerAddress) {
+      setClPositions([]);
+      setClLoading(false);
+      setClError(null);
+      lastSearchedAddressRef.current = null;
+      return;
+    }
+    
+    // Always fetch when ownerAddress changes
+    fetchPositions(false, true);
+  }, [ownerAddress, fetchPositions]);
+  
+  // Clear positions when wallet disconnects
+  useEffect(() => {
+    if (!isConnected) {
+      setClPositions([]);
+      setClLoading(false);
+      setClError(null);
+      lastSearchedAddressRef.current = null;
+      lastClFetchAtRef.current = 0;
+    }
+  }, [isConnected]);
 
   // Auto-refresh every 60 seconds
   useEffect(() => {
@@ -81,7 +111,7 @@ export function usePositions(ownerAddress?: Address, isConnected = false) {
     clPositions,
     clLoading,
     clError,
-    refresh: () => fetchPositions(false),
+    refresh: () => fetchPositions(false, true),
   };
 }
 
