@@ -32,6 +32,7 @@
     "tagline": "LP Journey Together",
     "ogTitle": "LPing - LP Position Tracker",
     "ogDescription": "Real-time monitoring of your Aerodrome Concentrated Liquidity positions",
-    "ogImageUrl": "https://lping.vercel.app/blue-hero.png"
+    "ogImageUrl": "https://lping.vercel.app/blue-hero.png",
+    "noindex": true
   }
 }

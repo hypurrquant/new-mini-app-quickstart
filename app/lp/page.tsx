@@ -201,91 +201,100 @@ function LpCheckerPageContent() {
             </div>
           </div>
         ))}
-        {results.length === 0 && (
-          <div style={{ border: `1px dashed ${theme.border}`, borderRadius: 10, padding: 12, background: theme.bgCard }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>Concentrated Liquidity Positions</div>
-              
-              {/* Sort Controls */}
-              {clPositions.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: 8,
-                      border: `1px solid ${theme.border}`,
-                      background: theme.bgCard,
-                      color: theme.text,
-                      fontSize: 13,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <option value="value">Sort by Value</option>
-                    <option value="apr">Sort by APR</option>
-                    <option value="daily">Sort by Daily Rewards</option>
-                    <option value="pair">Sort by Pair</option>
-                  </select>
-                  <button
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: 8,
-                      border: `1px solid ${theme.border}`,
-                      background: theme.bgCard,
-                      color: theme.text,
-                      cursor: 'pointer',
-                      fontSize: 13,
-                    }}
-                    title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                  >
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </button>
-                </div>
-              )}
-            </div>
-            {clLoading && (
-              <div style={{ display: 'grid', gap: 10 }}>
-                <div style={{ height: 80, borderRadius: 10, background: theme.skeleton, animation: 'pulse 1.2s ease-in-out infinite' }} />
-                <div style={{ height: 80, borderRadius: 10, background: theme.skeleton, animation: 'pulse 1.2s ease-in-out infinite' }} />
-                <div style={{ height: 80, borderRadius: 10, background: theme.skeleton, animation: 'pulse 1.2s ease-in-out infinite' }} />
+      </div>
+
+      {/* Concentrated Liquidity Positions Section */}
+      {results.length === 0 && (
+        <div style={{ border: `1px dashed ${theme.border}`, borderRadius: 10, padding: 12, background: theme.bgCard }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 16 }}>Concentrated Liquidity Positions</div>
+            
+            {/* Sort Controls */}
+            {clPositions.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 8,
+                    border: `1px solid ${theme.border}`,
+                    background: theme.bgCard,
+                    color: theme.text,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="value">Sort by Value</option>
+                  <option value="apr">Sort by APR</option>
+                  <option value="daily">Sort by Daily Rewards</option>
+                  <option value="pair">Sort by Pair</option>
+                </select>
+                <button
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 8,
+                    border: `1px solid ${theme.border}`,
+                    background: theme.bgCard,
+                    color: theme.text,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                  }}
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </button>
               </div>
             )}
-            {clError && <div style={{ fontSize: 14, color: theme.warning }}>{clError}</div>}
+          </div>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {clLoading && (
+        <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
+          <div style={{ height: 80, borderRadius: 10, background: theme.skeleton, animation: 'pulse 1.2s ease-in-out infinite' }} />
+          <div style={{ height: 80, borderRadius: 10, background: theme.skeleton, animation: 'pulse 1.2s ease-in-out infinite' }} />
+          <div style={{ height: 80, borderRadius: 10, background: theme.skeleton, animation: 'pulse 1.2s ease-in-out infinite' }} />
+        </div>
+      )}
+      
+      {/* Error State */}
+      {clError && <div style={{ fontSize: 14, color: theme.warning, marginTop: 16 }}>{clError}</div>}
+      
+      {/* Table Header - Always visible */}
+      {!clLoading && (
+        <div style={{ 
+          marginTop: 16,
+        }}>
+          <div style={{ 
+            border: `1px solid ${theme.border}`, 
+            borderRadius: 12, 
+            overflow: 'hidden',
+            background: theme.bgCard,
+          }}>
+            {/* Table Header */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '2fr 1fr 1.5fr 1.2fr 1fr 1fr',
+              padding: '12px 16px',
+              background: theme.bgSecondary,
+              fontWeight: 600,
+              fontSize: 13,
+              color: theme.textSecondary,
+              borderBottom: clPositions.length > 0 ? `1px solid ${theme.border}` : 'none',
+            }}>
+              <div>Pair</div>
+              <div style={{ textAlign: 'right' }}>Value (USD)</div>
+              <div style={{ textAlign: 'right' }}>Price Range</div>
+              <div style={{ textAlign: 'right' }}>Earned (USD)</div>
+              <div style={{ textAlign: 'right' }}>APR</div>
+              <div style={{ textAlign: 'right' }}>Status</div>
+            </div>
             
-            {/* Table Header - Always visible */}
-            {!clLoading && (
-              <div style={{ 
-                marginTop: 16,
-              }}>
-                <div style={{ 
-                  border: `1px solid ${theme.border}`, 
-                  borderRadius: 12, 
-                  overflow: 'hidden',
-                  background: theme.bgCard,
-                }}>
-                  {/* Table Header */}
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '2fr 1fr 1.5fr 1.2fr 1fr 1fr',
-                    padding: '12px 16px',
-                    background: theme.bgSecondary,
-                    fontWeight: 600,
-                    fontSize: 13,
-                    color: theme.textSecondary,
-                    borderBottom: clPositions.length > 0 ? `1px solid ${theme.border}` : 'none',
-                  }}>
-                    <div>Pair</div>
-                    <div style={{ textAlign: 'right' }}>Value (USD)</div>
-                    <div style={{ textAlign: 'right' }}>Price Range</div>
-                    <div style={{ textAlign: 'right' }}>Earned (USD)</div>
-                    <div style={{ textAlign: 'right' }}>APR</div>
-                    <div style={{ textAlign: 'right' }}>Status</div>
-                  </div>
-                  
-                  {/* Empty State - shown when no positions */}
-                  {clPositions.length === 0 && !clError && (
+            {/* Empty State - shown when no positions */}
+            {clPositions.length === 0 && !clError && (
                     <div style={{ 
                       padding: 32, 
                       textAlign: 'center',
@@ -449,7 +458,9 @@ function LpCheckerPageContent() {
                       setExpandedPositions(newExpanded);
                     };
                     
-                    return sorted.map((p: any) => {
+                    return (
+                      <>
+                        {sorted.map((p: any) => {
                 const invert = !!invertMap[p.tokenId];
                 const baseSym = invert ? (p.token1Symbol || 'Token1') : (p.token0Symbol || 'Token0');
                 const quoteSym = invert ? (p.token0Symbol || 'Token0') : (p.token1Symbol || 'Token1');
@@ -984,13 +995,13 @@ function LpCheckerPageContent() {
                   </div>
                 );
               })}
-                    </div>
-                  );
-                })()}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             )}
-      </div>
+
       <style jsx global>{`
         @keyframes pulse { 0% { opacity: .6 } 50% { opacity: 1 } 100% { opacity: .6 } }
       `}</style>
