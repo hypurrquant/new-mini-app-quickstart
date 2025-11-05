@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LPCalculator from "./components/LPCalculator";
+import { useMiniAppNavigation } from "./hooks/useMiniAppNavigation";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const router = useRouter();
+  const navigate = useMiniAppNavigation();
 
   // Load dark mode preference from localStorage
   useEffect(() => {
@@ -183,7 +185,7 @@ export default function Home() {
             lineHeight: 1.6,
             fontWeight: 400,
           }}>
-            Stop losing money in zero-sum futures games. Join thousands earning safe, compounding returns with curated strategies.
+            LP를 안전하고 재미있게. 우리와 함께 수익을 만들어보세요.
           </p>
         </div>
 
@@ -192,8 +194,8 @@ export default function Home() {
           marginTop: 48,
           animation: 'fadeInUp 1s ease-out',
         }}>
-          <Link 
-            href="/lp"
+          <button
+            onClick={() => navigate('/lp')}
             style={{
               display: 'inline-block',
               padding: '20px 56px',
@@ -223,8 +225,8 @@ export default function Home() {
                 : '0 8px 32px rgba(37, 99, 235, 0.4)';
             }}
           >
-            Start Exploring
-          </Link>
+            Launch App
+          </button>
         </div>
 
         {/* Social Proof */}
