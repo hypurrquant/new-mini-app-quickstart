@@ -3,12 +3,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LPCalculator from "./components/LPCalculator";
-import { useMiniAppNavigation } from "./hooks/useMiniAppNavigation";
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState(false);
   const router = useRouter();
-  const navigate = useMiniAppNavigation();
 
   // Load dark mode preference from localStorage
   useEffect(() => {
@@ -185,7 +183,7 @@ export default function Home() {
             lineHeight: 1.6,
             fontWeight: 400,
           }}>
-            LP를 안전하고 재미있게. 우리와 함께 수익을 만들어보세요.
+            Make LP safe and fun. Build returns with LPing.
           </p>
         </div>
 
@@ -195,7 +193,12 @@ export default function Home() {
           animation: 'fadeInUp 1s ease-out',
         }}>
           <button
-            onClick={() => navigate('/lp')}
+            onClick={(e) => {
+              e.preventDefault();
+              // Use router.push directly for internal navigation
+              // Base App mini apps handle internal routing through Next.js router
+              router.push('/lp');
+            }}
             style={{
               display: 'inline-block',
               padding: '20px 56px',
