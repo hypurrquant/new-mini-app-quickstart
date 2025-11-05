@@ -253,203 +253,203 @@ function LpCheckerPageContent() {
               </div>
             )}
             {clError && <div style={{ fontSize: 14, color: theme.warning }}>{clError}</div>}
-            {!clLoading && clPositions.length === 0 && !clError && (
-              <div style={{ 
-                padding: 32, 
-                textAlign: 'center',
-                background: theme.bgCard,
-                borderRadius: 12,
-                border: `2px dashed ${theme.border}`,
-              }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-                <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
-                  No CL positions found for this owner
-                </div>
-                <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 24 }}>
-                  {ownerAddress ? (
-                    <>Connected wallet has no Aerodrome CL positions</>
-                  ) : (
-                    <>Connect your wallet or search by address</>
-                  )}
-                </div>
-                
-                {!showAddressInput ? (
-                  <button
-                    onClick={() => setShowAddressInput(true)}
-                    style={{
-                      padding: '12px 24px',
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: '#ffffff',
-                      background: theme.primary,
-                      border: 'none',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = darkMode 
-                        ? '0 4px 12px rgba(66, 165, 245, 0.3)' 
-                        : '0 4px 12px rgba(25, 118, 210, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    🔎 Search by Address
-                  </button>
-                ) : (
-                  <div style={{ maxWidth: 500, margin: '0 auto' }}>
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                      <input
-                        type="text"
-                        placeholder="Enter wallet address (0x...)"
-                        value={addressInput}
-                        onChange={(e) => {
-                          setAddressInput(e.target.value);
-                          setAddressError("");
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: '12px 16px',
-                          fontSize: 14,
-                          border: `1px solid ${addressError ? theme.warning : theme.border}`,
-                          borderRadius: 8,
-                          background: theme.bgCard,
-                          color: theme.text,
-                          outline: 'none',
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            const addr = addressInput.trim();
-                            if (!addr) {
-                              setAddressError("Please enter an address");
-                              return;
-                            }
-                            if (!isAddress(addr)) {
-                              setAddressError("Invalid address format");
-                              return;
-                            }
-                            // Navigate with view parameter
-                            window.location.href = `/lp?view=${addr}`;
-                          }
-                        }}
-                      />
-                      <button
-                        onClick={() => {
-                          const addr = addressInput.trim();
-                          if (!addr) {
-                            setAddressError("Please enter an address");
-                            return;
-                          }
-                          if (!isAddress(addr)) {
-                            setAddressError("Invalid address format");
-                            return;
-                          }
-                          // Navigate with view parameter
-                          window.location.href = `/lp?view=${addr}`;
-                        }}
-                        style={{
-                          padding: '12px 24px',
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: '#ffffff',
-                          background: theme.primary,
-                          border: 'none',
-                          borderRadius: 8,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.opacity = '0.9';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.opacity = '1';
-                        }}
-                      >
-                        Search
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowAddressInput(false);
-                          setAddressInput("");
-                          setAddressError("");
-                        }}
-                        style={{
-                          padding: '12px 16px',
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: theme.textSecondary,
-                          background: theme.bgSecondary,
-                          border: `1px solid ${theme.border}`,
-                          borderRadius: 8,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                    {addressError && (
-                      <div style={{ fontSize: 12, color: theme.warning, textAlign: 'left' }}>
-                        {addressError}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
             
-            {/* Sorted and filtered positions */}
-            {(() => {
-              // Show all active positions (inactive ones are handled by isActive flag)
-              const filtered = clPositions.filter((p) => p.isActive);
-              
-              // Sort positions using utility function
-              const sorted = sortPositions(filtered, sortBy, sortOrder);
-              
-              const toggleExpand = (tokenId: string) => {
-                const newExpanded = new Set(expandedPositions);
-                if (newExpanded.has(tokenId)) {
-                  newExpanded.delete(tokenId);
-                } else {
-                  newExpanded.add(tokenId);
-                }
-                setExpandedPositions(newExpanded);
-              };
-              
-              // Render positions as table with expandable rows
-              return (
-                <div style={{ marginTop: 16 }}>
-                  {/* Table */}
+            {/* Table Header - Always visible */}
+            {!clLoading && (
+              <div style={{ 
+                marginTop: 16,
+              }}>
+                <div style={{ 
+                  border: `1px solid ${theme.border}`, 
+                  borderRadius: 12, 
+                  overflow: 'hidden',
+                  background: theme.bgCard,
+                }}>
+                  {/* Table Header */}
                   <div style={{ 
-                    border: `1px solid ${theme.border}`, 
-                    borderRadius: 12, 
-                    overflow: 'hidden',
-                    background: theme.bgCard 
+                    display: 'grid', 
+                    gridTemplateColumns: '2fr 1fr 1.5fr 1.2fr 1fr 1fr',
+                    padding: '12px 16px',
+                    background: theme.bgSecondary,
+                    fontWeight: 600,
+                    fontSize: 13,
+                    color: theme.textSecondary,
+                    borderBottom: clPositions.length > 0 ? `1px solid ${theme.border}` : 'none',
                   }}>
-                    {/* Table Header */}
+                    <div>Pair</div>
+                    <div style={{ textAlign: 'right' }}>Value (USD)</div>
+                    <div style={{ textAlign: 'right' }}>Price Range</div>
+                    <div style={{ textAlign: 'right' }}>Earned (USD)</div>
+                    <div style={{ textAlign: 'right' }}>APR</div>
+                    <div style={{ textAlign: 'right' }}>Status</div>
+                  </div>
+                  
+                  {/* Empty State - shown when no positions */}
+                  {clPositions.length === 0 && !clError && (
                     <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: '2fr 1fr 1.5fr 1.2fr 1fr 1fr',
-                      padding: '12px 16px',
-                      background: theme.bgSecondary,
-                      fontWeight: 600,
-                      fontSize: 13,
-                      color: theme.textSecondary,
-                      borderBottom: `1px solid ${theme.border}`,
+                      padding: 32, 
+                      textAlign: 'center',
+                      background: theme.bgCard,
                     }}>
-                      <div>Pair</div>
-                      <div style={{ textAlign: 'right' }}>Value (USD)</div>
-                      <div style={{ textAlign: 'right' }}>Price Range</div>
-                      <div style={{ textAlign: 'right' }}>Earned (USD)</div>
-                      <div style={{ textAlign: 'right' }}>APR</div>
-                      <div style={{ textAlign: 'right' }}>Status</div>
+                      <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+                      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+                        No CL positions found for this owner
+                      </div>
+                      <div style={{ fontSize: 14, color: theme.textSecondary, marginBottom: 24 }}>
+                        {ownerAddress ? (
+                          <>Connected wallet has no Aerodrome CL positions</>
+                        ) : (
+                          <>Connect your wallet or search by address</>
+                        )}
+                      </div>
+                      
+                      {!showAddressInput ? (
+                        <button
+                          onClick={() => setShowAddressInput(true)}
+                          style={{
+                            padding: '12px 24px',
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: '#ffffff',
+                            background: theme.primary,
+                            border: 'none',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = darkMode 
+                              ? '0 4px 12px rgba(66, 165, 245, 0.3)' 
+                              : '0 4px 12px rgba(25, 118, 210, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
+                        >
+                          🔎 Search by Address
+                        </button>
+                      ) : (
+                        <div style={{ maxWidth: 500, margin: '0 auto' }}>
+                          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                            <input
+                              type="text"
+                              placeholder="Enter wallet address (0x...)"
+                              value={addressInput}
+                              onChange={(e) => {
+                                setAddressInput(e.target.value);
+                                setAddressError("");
+                              }}
+                              style={{
+                                flex: 1,
+                                padding: '12px 16px',
+                                fontSize: 14,
+                                border: `1px solid ${addressError ? theme.warning : theme.border}`,
+                                borderRadius: 8,
+                                background: theme.bgCard,
+                                color: theme.text,
+                                outline: 'none',
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const addr = addressInput.trim();
+                                  if (!addr) {
+                                    setAddressError("Please enter an address");
+                                    return;
+                                  }
+                                  if (!isAddress(addr)) {
+                                    setAddressError("Invalid address format");
+                                    return;
+                                  }
+                                  // Navigate with view parameter
+                                  window.location.href = `/lp?view=${addr}`;
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                const addr = addressInput.trim();
+                                if (!addr) {
+                                  setAddressError("Please enter an address");
+                                  return;
+                                }
+                                if (!isAddress(addr)) {
+                                  setAddressError("Invalid address format");
+                                  return;
+                                }
+                                // Navigate with view parameter
+                                window.location.href = `/lp?view=${addr}`;
+                              }}
+                              style={{
+                                padding: '12px 24px',
+                                fontSize: 14,
+                                fontWeight: 600,
+                                color: '#ffffff',
+                                background: theme.primary,
+                                border: 'none',
+                                borderRadius: 8,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.opacity = '0.9';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.opacity = '1';
+                              }}
+                            >
+                              Search
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowAddressInput(false);
+                                setAddressInput("");
+                                setAddressError("");
+                              }}
+                              style={{
+                                padding: '12px 16px',
+                                fontSize: 14,
+                                fontWeight: 600,
+                                color: theme.textSecondary,
+                                background: theme.bgSecondary,
+                                border: `1px solid ${theme.border}`,
+                                borderRadius: 8,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          {addressError && (
+                            <div style={{ fontSize: 12, color: theme.warning, textAlign: 'left' }}>
+                              {addressError}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
+                  )}
+                  
+                  {/* Table Body - shown when positions exist */}
+                  {clPositions.length > 0 && (() => {
+                    // Show all active positions (inactive ones are handled by isActive flag)
+                    const filtered = clPositions.filter((p) => p.isActive);
                     
-                    {/* Table Body */}
-                    {sorted.map((p: any) => {
+                    // Sort positions using utility function
+                    const sorted = sortPositions(filtered, sortBy, sortOrder);
+                    
+                    const toggleExpand = (tokenId: string) => {
+                      const newExpanded = new Set(expandedPositions);
+                      if (newExpanded.has(tokenId)) {
+                        newExpanded.delete(tokenId);
+                      } else {
+                        newExpanded.add(tokenId);
+                      }
+                      setExpandedPositions(newExpanded);
+                    };
+                    
+                    return sorted.map((p: any) => {
                 const invert = !!invertMap[p.tokenId];
                 const baseSym = invert ? (p.token1Symbol || 'Token1') : (p.token0Symbol || 'Token0');
                 const quoteSym = invert ? (p.token0Symbol || 'Token0') : (p.token1Symbol || 'Token1');
@@ -984,12 +984,12 @@ function LpCheckerPageContent() {
                   </div>
                 );
               })}
-                  </div>
+                    </div>
+                  );
+                })()}
                 </div>
-              );
-            })()}
-          </div>
-        )}
+              </div>
+            )}
       </div>
       <style jsx global>{`
         @keyframes pulse { 0% { opacity: .6 } 50% { opacity: 1 } 100% { opacity: .6 } }
