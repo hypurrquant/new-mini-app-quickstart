@@ -52,23 +52,25 @@ export default function Header({ theme, darkMode, setDarkMode, onShowGuide, onSh
         </div>
       </Link>
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        {/* Guide Button */}
+        {/* Guide Button - Minimum 44px touch target per Base Guidelines */}
         <button
           onClick={onShowGuide}
           style={{
-            padding: "8px 10px",
+            padding: "12px",
             borderRadius: 8,
             border: `1px solid ${theme.border}`,
             background: theme.bgCard,
             color: theme.text,
             cursor: "pointer",
-            fontSize: 16,
+            fontSize: 18,
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 36,
-            height: 36,
+            minWidth: 44,
+            minHeight: 44,
+            width: 44,
+            height: 44,
           }}
           title="Guide"
           aria-label="Show guide"

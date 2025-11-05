@@ -41,7 +41,10 @@ const manifest = {
     tagline: "LP Journey Together",
     ogTitle: "LPing - LP Position Tracker",
     ogDescription: "Real-time monitoring of your Aerodrome Concentrated Liquidity positions",
-    ogImageUrl: `${ROOT_URL}/blue-hero.png`
+    ogImageUrl: `${ROOT_URL}/blue-hero.png`,
+    // Set noindex to false for production to enable search indexing
+    // Set to true only for development/staging environments
+    noindex: process.env.NODE_ENV === 'production' ? false : true
   }
 };
 
